@@ -1,0 +1,93 @@
+# Breakdown of epic-platform-baseline. Table order is build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Three-module skeleton launches on the new toolchain"
+description = "Replaces the old app with `:domain`, `:data` and `:app` on the Stack toolchain with Hilt, app ID com.shashi.expensetracker, default debug signing, JVM and Compose test setup, and no Secrets plugin; one placeholder screen shows a greeting from a `:domain` use case through a `:data` stub, and CLAUDE.md and the Copilot instructions describe the new structure."
+verify = "`./gradlew assembleDebug test` passes, `:domain` has no Android dependency, and the debug app launches on a device showing the greeting."
+covers = ["B1", "B2", "B3", "B4", "B5", "B10"]
+after = []
+hitl = true
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-1-three-module-clean-architecture-adopted", "spec-expense-tracker/brownfield.md"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Manifest, signing and R8 release config"
+description = "Sets `allowBackup=false`, removes `GET_ACCOUNTS`, signs release builds from environment variables and turns on R8 with keep rules for Moshi and Retrofit models; it owns `app/build.gradle.kts` changes in this epic."
+verify = "A release build assembles minified and launches; the merged manifest shows `allowBackup=false` and no `GET_ACCOUNTS`."
+covers = ["B4", "B6"]
+after = [1]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "CI with the 500-line check"
+description = "Adds a root-build-logic Gradle task that fails on any `.kt` file over 500 lines, wired into `check`, and a GitHub Actions workflow on JDK 17+ running build, unit tests, lint and that check on every push and PR."
+verify = "A PR's workflow run is green, and a temporary 501-line `.kt` file makes `./gradlew check` fail."
+covers = ["B7"]
+after = [1]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Jelly Pop theme from DESIGN.md"
+description = "Builds the Compose theme from DESIGN.md's tokens — light and dark colors, typography, shapes, glass with its minSdk 24 fallback — following the system theme with Material You off, plus a reduce-motion setting animations read."
+verify = "A Compose test renders the theme in light and dark and its color values equal DESIGN.md's hex tokens."
+covers = ["B8"]
+after = [1]
+hitl = false
+risk = "medium"
+references = ["ux-expense-tracker/DESIGN.md"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Five-tab shell with pill nav and rail"
+description = "Adds the Navigation Compose host with Home, Expenses, Inbox, Budgets and Settings placeholder screens, each with a ViewModel, the floating pill nav, a rail at 600dp and wider, edge-to-edge, Back to Home, an Inbox badge slot for epic-sms-inbox and a start destination epic-account-and-sheet can gate behind sign-in."
+verify = "A Compose test taps each tab and sees its placeholder; at 600dp width a navigation rail replaces the pill nav."
+covers = ["B9"]
+after = [4]
+hitl = false
+risk = "medium"
+references = ["ux-expense-tracker/EXPERIENCE.md", "ux-expense-tracker/mockups/key-home.html"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Roborazzi screenshot harness for the shell"
+description = "Sets up Roborazzi with baselines of the shell in light, dark, 1.75x font scale and 600dp width, ready for later epics' screens."
+verify = "`./gradlew verifyRoborazziDebug` passes and fails after a deliberate visual change."
+covers = ["B10"]
+after = [5]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 7
+type = "story"
+title = "First release on the Play closed track"
+description = "Creates the app in Play Console with Play App Signing, uploads the R8 release build to the closed test track, and records the Play App Signing SHA-1 in this epic's Notes for epic-account-and-sheet's release OAuth client."
+verify = "A tester installs the app from the closed track and sees the shell; the SHA-1 is recorded."
+covers = ["B11"]
+after = [2, 5]
+hitl = true
+risk = "medium"
+unknown = "Is the owner's Google Play developer account registered and verified?"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Refactor sweep"
+description = "Cleans up what this epic's plans and deferred review findings name; scope is set when it starts."
+verify = "CI is green and every deferred finding from this epic is resolved or recorded."
+covers = []
+after = [1, 2, 3, 4, 5, 6, 7]
+hitl = false
+risk = "low"
