@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Key screen · Sign-in</title>
+<style>
+/* ===== Key screen: Sign-in =====
+   Visual direction: Orbit Rings (structure, shapes) x Jelly Pop (colors, light + dark).
+   Spine sections governing this screen:
+   - DESIGN.md / Brand & Style .......... private by design; "Private: lives in your own Google Sheet"
+   - DESIGN.md / Colors ................. Jelly Pop light + dark tokens, aurora; Contrast rule (#DB2777 behind white text)
+   - DESIGN.md / Components ............. Sign-in screen; button-primary (gradient pill, 48dp); hero-chart rings reused as the brand mark
+   - DESIGN.md / Typography + Layout & Spacing ... 1.75x font scale at 320dp, non-linear display scaling, reflow not truncation
+   - EXPERIENCE.md / Information Architecture .... Sign-in is the only reachable screen while signed out; no nav
+   - EXPERIENCE.md / State Patterns ............. Signing in: "Setting up your Expense Sheet…"
+   - EXPERIENCE.md / Voice and Tone ............. calm, plain words, no emoji, no exclamation marks
+   - EXPERIENCE.md / Key Flows / UJ-2 ........... first sign-in creates the Expense Sheet; a new phone finds it
+   - EXPERIENCE.md / Accessibility Floor ........ 48dp targets, WCAG AA, TalkBack labels, testTags
+*/
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#E9E7E2;color:#1d1d1f}
+.doc{max-width:1240px;margin:0 auto;padding:36px 24px 8px}
+.doc .crumb{font:600 12px/1 system-ui;letter-spacing:.12em;text-transform:uppercase;color:#6b665e}
+.doc h1{font:800 34px/1.1 system-ui;letter-spacing:-.02em;margin:10px 0 12px}
+.doc .why{font:400 16px/1.55 system-ui;max-width:860px;color:#333;margin:0}
+.doc .back{display:inline-block;margin-top:14px;font:600 13px system-ui;color:#4a4a8a}
+.state{max-width:1240px;margin:0 auto;padding:30px 24px 0}
+.state h2{font:750 20px/1.2 system-ui;letter-spacing:-.01em;margin:0 0 6px;color:#2b2925}
+.state p{font:400 14px/1.5 system-ui;color:#55514a;margin:0;max-width:860px}
+.frames{display:flex;flex-wrap:wrap;gap:44px;justify-content:center;align-items:flex-start;padding:24px 24px 16px}
+figure{margin:0}
+figcaption{font:600 13px/1.45 system-ui;text-align:center;margin-top:14px;color:#55514a;max-width:360px}
+figcaption small{display:block;font-weight:400;color:#6b665e}
+.phone{width:360px;height:780px;border-radius:50px;padding:10px;background:#141414;box-shadow:0 40px 70px -30px rgba(0,0,0,.45),inset 0 0 0 2px #3a3a3a}
+.phone.large{width:320px;height:auto}
+.screen{position:relative;height:100%;border-radius:40px;overflow:hidden;display:flex;flex-direction:column;font-size:15px;line-height:1.3;color:var(--ink)}
+.phone.large .screen{font-size:26px;min-height:760px}
+.status{height:38px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:600 13px/1 system-ui;position:relative;z-index:3}
+.status .cam{width:11px;height:11px;border-radius:50%;background:#000;box-shadow:0 0 0 2px rgba(127,127,127,.25)}
+.status .sicons{display:flex;gap:4px;align-items:center}
+.content{flex:1;overflow:hidden;position:relative;z-index:1}
+.dock{position:absolute;left:0;right:0;bottom:0;z-index:4}
+.gbar{height:20px;display:grid;place-items:center}
+.gbar::after{content:"";width:110px;height:4px;border-radius:4px;background:var(--ink);opacity:.35}
+.ic{width:1.3em;height:1.3em;flex:none;display:block}
+a{text-decoration:none;color:inherit}
+.tnum{font-variant-numeric:tabular-nums}
+.notes{max-width:1240px;margin:0 auto;padding:8px 24px 48px;font:400 14px/1.55 system-ui;color:#444}
+.notes ul{margin:6px 0 0;padding-left:18px}
+
+/* COLORS: DESIGN.md tokens, light + dark twins. --h2t is the text-safe gradient end:
+   white text never sits on #EC4899 (about 3.5:1); text-bearing gradients end on #DB2777 (about 4.6:1). */
+.light{--bg:#FFF7F0;--surface:#FFFFFF;--ink:#2B1838;--muted:#7A6A86;--line:#F0E4DA;--edge:#EADCF0;--primary:#6D28D9;--h1:#6D28D9;--h2:#EC4899;--h2t:#DB2777;--pill:#EDE4FF;--track:#F2ECF5;--over:#E11D48;--overbg:#FFF1F3;--syncbg:#FFF1D6;--syncink:#B45309;--food:#F59E0B;--transport:#10B981;--shopping:#E11D48;--bills:#3B82F6;--fun:#A855F7;
+ --a1:#EDE4FF;--a2:#FFD6E0;--a3:#FFE9C7;--glass:#FFFFFFB8;--glassln:#FFFFFFE6;--navglass:#FFFFFFD9;--scrim:#2B183873}
+.dark{--bg:#171021;--surface:#241A33;--ink:#F6EEFF;--muted:#B3A4C6;--line:#33264A;--edge:#0E0915;--primary:#C4B5FD;--h1:#7C3AED;--h2:#DB2777;--h2t:#DB2777;--pill:#3B2A5C;--track:#33264A;--over:#FB7185;--overbg:#33141F;--syncbg:#3D2C0A;--syncink:#FBBF24;--food:#FBBF24;--transport:#34D399;--shopping:#FB7185;--bills:#60A5FA;--fun:#C084FC;
+ --a1:#3B2A5C;--a2:#3D1424;--a3:#2E1A45;--glass:#241A33B8;--glassln:#33264A;--navglass:#241A33E6;--scrim:#0E0915A6}
+
+/* ---------- Orbit Rings structure (shared with key-home.html) ---------- */
+.screen{background:radial-gradient(circle at 10% 2%,var(--a1) 0,transparent 42%),radial-gradient(circle at 95% 14%,var(--a2) 0,transparent 38%),radial-gradient(circle at 55% 46%,var(--a3) 0,transparent 40%),var(--bg)}
+.glass{background:var(--glass);border:1px solid var(--glassln);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.grad{background:linear-gradient(135deg,var(--h1),var(--h2t));color:#fff}
+.btn{display:flex;align-items:center;justify-content:center;gap:.5em;min-height:3.2em;padding:.4em 1.4em;border-radius:999px;font-weight:700;text-align:center}
+.btn.pri{color:#fff;background:linear-gradient(135deg,var(--h1),var(--h2t));box-shadow:0 .6em 1.4em -.6em var(--h2)}
+.btn .ic{width:1.15em;height:1.15em}
+.privacy{display:flex;align-items:center;justify-content:center;gap:.4em;color:var(--muted);font-size:.8em;text-align:center}
+.privacy .ic{width:1.1em;height:1.1em}
+.sync{display:inline-flex;align-items:center;gap:.4em;font-size:.76em;font-weight:650;color:var(--syncink);background:var(--syncbg);padding:.55em .9em;border-radius:999px;min-height:2.6em}
+.sync .ic{width:1.15em;height:1.15em}
+/* floating pill nav */
+.nav{display:flex;margin:0 .9em .3em;border-radius:999px;padding:.35em;background:var(--navglass);border:1px solid var(--glassln);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 .8em 2em -1em rgba(43,24,56,.5)}
+.ni{flex:1;display:flex;align-items:center;justify-content:center;gap:.35em;height:2.8em;border-radius:999px;color:var(--muted)}
+.ni .nl{display:none;font-weight:700;font-size:.82em}
+.ni.on{flex:2.1;background:linear-gradient(135deg,var(--h1),var(--h2t));color:#fff}
+.ni.on .nl{display:inline}
+.ind{position:relative;display:grid;place-items:center}
+.badge{position:absolute;top:-.55em;right:-.75em;min-width:1.55em;height:1.55em;border-radius:999px;background:var(--over);color:#fff;font:800 .6em/1.55em system-ui;font-style:normal;text-align:center;box-shadow:0 0 0 .2em var(--bg)}
+/* dialog + scrim */
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:5}
+.dialog{position:absolute;left:1.5em;right:1.5em;top:50%;transform:translateY(-50%);z-index:6;padding:1.4em 1.3em 1em;border-radius:1.9em;background:var(--surface);box-shadow:0 1.5em 3em -1em rgba(14,9,21,.55);text-align:center}
+.dorb{width:3.2em;height:3.2em;border-radius:50%;display:grid;place-items:center;margin:0 auto .8em;background:var(--overbg);color:var(--over);box-shadow:0 0 0 .35em var(--overbg)}
+.dorb .ic{width:1.4em;height:1.4em}
+.dialog h3{margin:0 0 .4em;font-size:1.2em;font-weight:700;letter-spacing:-.01em}
+.dialog p{margin:0;color:var(--muted);font-size:.88em;line-height:1.45}
+.dact{display:flex;justify-content:flex-end;gap:.5em;margin-top:1.2em}
+.dact a{height:2.9em;padding:0 1.3em;border-radius:999px;display:grid;place-items:center;font-weight:700;font-size:.9em}
+.dact .cancel{color:var(--primary)}
+.dact .delete{background:var(--over);color:var(--surface)}
+
+
+/* ---------- Sign-in layout ---------- */
+.sign{flex:1;display:flex;flex-direction:column;align-items:center;padding:0 1.6em 2.4em;text-align:center;position:relative;z-index:1}
+.brand{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1em}
+/* brand mark: static hero-chart rings (outer Category segments with 2deg gaps, inner gradient orbit) */
+.mark{position:relative;width:8.4em;height:8.4em;display:grid;place-items:center;border-radius:50%}
+.mark::before{content:"";position:absolute;inset:0;border-radius:50%;
+ background:conic-gradient(var(--food) 0 70deg,transparent 0 72deg,var(--shopping) 0 142deg,transparent 0 144deg,var(--bills) 0 214deg,transparent 0 216deg,var(--transport) 0 286deg,transparent 0 288deg,var(--fun) 0 358deg,transparent 0);
+ -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .95em),#000 calc(100% - .95em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .95em),#000 calc(100% - .95em + 1px))}
+.mark .inner{position:absolute;inset:1.25em;border-radius:50%;background:conic-gradient(var(--h1),var(--h2) 75%,var(--track) 0);
+ -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .5em),#000 calc(100% - .5em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .5em),#000 calc(100% - .5em + 1px))}
+.mark .core{width:2.6em;height:2.6em;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--h2),var(--h1));box-shadow:0 0 0 .35em var(--glass),0 0 1.6em var(--h2)}
+.appname{margin:0;font-size:1.87em;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.action{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:1em}
+/* progress (Signing in) */
+.progress{display:flex;flex-direction:column;align-items:center;gap:.8em;min-height:3.2em}
+.spin{width:3.2em;height:3.2em;border-radius:50%;background:conic-gradient(var(--h1),var(--h2) 32%,var(--track) 0);
+ -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .42em),#000 calc(100% - .42em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .42em),#000 calc(100% - .42em + 1px))}
+.progress b{font-weight:650;font-size:1em}
+/* ---------- large text (1.75x) + narrow 320dp ---------- */
+.large .sign{padding:1em .8em 1.4em}
+.large .brand{gap:.6em;padding:1em 0 1.4em}
+.large .mark{width:5.2em;height:5.2em}
+.large .mark::before{-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .6em),#000 calc(100% - .6em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .6em),#000 calc(100% - .6em + 1px))}
+.large .mark .inner{inset:.8em;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .32em),#000 calc(100% - .32em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .32em),#000 calc(100% - .32em + 1px))}
+.large .mark .core{width:1.6em;height:1.6em}
+.large .appname{font-size:1.5em}
+.large .btn{border-radius:1em;font-size:.9em}
+.large .privacy{font-size:.72em;align-items:flex-start}
+.large .privacy .ic{margin-top:.15em}
+
+</style></head>
+<body>
+<header class="doc"><div class="crumb">Expense Tracker · Key screens · Orbit Rings × Jelly Pop</div><h1>Sign-in</h1><p class="why">The first thing Shylock sees, and the only screen while signed out. The brand sits over the aurora with one action, “Continue with Google”, and one calm line on privacy. After he continues, the app finds or creates his Expense Sheet in Drive.</p><a class="back" href="key-index.html">← All key screens</a></header>
+<section class="state"><h2>State 1 · Signed out</h2><p>The only screen reachable while signed out. The brand mark reuses the hero chart rings over the aurora. One gradient “Continue with Google” button, then the privacy line. No nav and no FAB.</p></section><main class="frames"><figure><div class="phone light"><div class="screen"><div class="status"><span>9:41</span><span class="cam"></span><span class="sicons"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M2 20h3v-4H2zm5 0h3v-8H7zm5 0h3V8h-3zm5 0h3V4h-3z"/></svg><svg viewBox="0 0 24 24" width="20" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="11" height="6" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg></span></div><div class="sign"><div class="brand"><div class="mark" aria-hidden="true"><span class="inner"></span><span class="core"></span></div><h1 class="appname">Expense Tracker</h1></div><div class="action"><a class="btn pri" data-testtag="signin_continue_google" role="button">Continue with Google</a><div class="privacy"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Private: lives in your own Google Sheet</span></div></div></div><div class="dock"><div class="gbar"></div></div></div></div><figcaption>Light · 360 dp · font scale 1.0×<small></small></figcaption></figure><figure><div class="phone dark"><div class="screen"><div class="status"><span>9:41</span><span class="cam"></span><span class="sicons"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M2 20h3v-4H2zm5 0h3v-8H7zm5 0h3V8h-3zm5 0h3V4h-3z"/></svg><svg viewBox="0 0 24 24" width="20" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="11" height="6" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg></span></div><div class="sign"><div class="brand"><div class="mark" aria-hidden="true"><span class="inner"></span><span class="core"></span></div><h1 class="appname">Expense Tracker</h1></div><div class="action"><a class="btn pri" data-testtag="signin_continue_google" role="button">Continue with Google</a><div class="privacy"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Private: lives in your own Google Sheet</span></div></div></div><div class="dock"><div class="gbar"></div></div></div></div><figcaption>Dark · 360 dp · font scale 1.0×<small></small></figcaption></figure><figure><div class="phone light large"><div class="screen"><div class="status"><span>9:41</span><span class="cam"></span><span class="sicons"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M2 20h3v-4H2zm5 0h3v-8H7zm5 0h3V8h-3zm5 0h3V4h-3z"/></svg><svg viewBox="0 0 24 24" width="20" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="11" height="6" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg></span></div><div class="sign"><div class="brand"><div class="mark" aria-hidden="true"><span class="inner"></span><span class="core"></span></div><h1 class="appname">Expense Tracker</h1></div><div class="action"><a class="btn pri" data-testtag="signin_continue_google" role="button">Continue with Google</a><div class="privacy"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Private: lives in your own Google Sheet</span></div></div></div><div class="dock"><div class="gbar"></div></div></div></div><figcaption>Light · 320 dp narrow · font scale 1.75×<small>The app name follows Android 14 non-linear scaling and grows less than body text. The button label wraps, and the button rounds to 12dp radius.</small></figcaption></figure></main><section class="state"><h2>State 2 · Signing in</h2><p>After “Continue with Google”, the button gives way to a progress ring and “Setting up your Expense Sheet…” while the Expense Sheet is found (new phone) or created (first sign-in). Then Home opens with loading placeholders. The privacy line stays.</p></section><main class="frames"><figure><div class="phone light"><div class="screen"><div class="status"><span>9:41</span><span class="cam"></span><span class="sicons"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M2 20h3v-4H2zm5 0h3v-8H7zm5 0h3V8h-3zm5 0h3V4h-3z"/></svg><svg viewBox="0 0 24 24" width="20" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="11" height="6" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg></span></div><div class="sign"><div class="brand"><div class="mark" aria-hidden="true"><span class="inner"></span><span class="core"></span></div><h1 class="appname">Expense Tracker</h1></div><div class="action"><div class="progress" role="status" aria-live="polite" data-testtag="signin_progress"><span class="spin" aria-hidden="true"></span><b>Setting up your Expense Sheet…</b></div><div class="privacy"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Private: lives in your own Google Sheet</span></div></div></div><div class="dock"><div class="gbar"></div></div></div></div><figcaption>Light · 360 dp · font scale 1.0×<small></small></figcaption></figure><figure><div class="phone dark"><div class="screen"><div class="status"><span>9:41</span><span class="cam"></span><span class="sicons"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M2 20h3v-4H2zm5 0h3v-8H7zm5 0h3V8h-3zm5 0h3V4h-3z"/></svg><svg viewBox="0 0 24 24" width="20" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="11" height="6" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg></span></div><div class="sign"><div class="brand"><div class="mark" aria-hidden="true"><span class="inner"></span><span class="core"></span></div><h1 class="appname">Expense Tracker</h1></div><div class="action"><div class="progress" role="status" aria-live="polite" data-testtag="signin_progress"><span class="spin" aria-hidden="true"></span><b>Setting up your Expense Sheet…</b></div><div class="privacy"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Private: lives in your own Google Sheet</span></div></div></div><div class="dock"><div class="gbar"></div></div></div></div><figcaption>Dark · 360 dp · font scale 1.0×<small></small></figcaption></figure></main>
+<div class="notes"><strong>Compose / M3 notes</strong><ul><li>Layout: a Column with the brand (centered, weight 1f) above the action area. Edge-to-edge, with the action above the gesture bar.</li><li>Brand mark: a static Canvas reusing the hero chart drawArc code (5 Category segments with 2° gaps, inner sweepGradient orbit). Decorative, so contentDescription = null.</li><li>Button: Button with a gradient Brush background ending on #DB2777 so the white label passes AA. testTag signin_continue_google. It squashes on press (scale about 0.92) unless Remove animations is on.</li><li>Signing in: the button is replaced, not disabled, by a CircularProgressIndicator plus the status text. Use liveRegion = Polite so TalkBack reads “Setting up your Expense Sheet…”.</li><li>No sign-in error or cancelled state is defined in EXPERIENCE.md, so none is drawn here. If the Google sheet is dismissed, the screen returns to State 1.</li></ul></div>
+</body></html>
