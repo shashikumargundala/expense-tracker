@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direction: Orbit Rings · Expense Tracker home</title>
+<style>
+/* ===== Direction: Orbit Rings (orbit-rings) =====
+   Glassy aurora tiles with activity-style progress rings; geometric, luminous, tech-premium.
+*/
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#E9E7E2;color:#1d1d1f}
+.doc{max-width:1240px;margin:0 auto;padding:36px 24px 8px}
+.doc .crumb{font:600 12px/1 system-ui;letter-spacing:.12em;text-transform:uppercase;color:#7a756c}
+.doc h1{font:800 34px/1.1 system-ui;letter-spacing:-.02em;margin:10px 0 12px}
+.doc .why{font:400 16px/1.55 system-ui;max-width:820px;color:#333;margin:0}
+.doc .back{display:inline-block;margin-top:14px;font:600 13px system-ui;color:#4a4a8a}
+.frames{display:flex;flex-wrap:wrap;gap:44px;justify-content:center;align-items:flex-start;padding:28px 24px 20px}
+figure{margin:0}
+figcaption{font:600 13px/1.45 system-ui;text-align:center;margin-top:14px;color:#55514a;max-width:360px}
+figcaption small{display:block;font-weight:400;color:#7a756c}
+.phone{width:360px;height:780px;border-radius:50px;padding:10px;background:#141414;box-shadow:0 40px 70px -30px rgba(0,0,0,.45),inset 0 0 0 2px #3a3a3a}
+.phone.large{width:320px;height:auto}
+.screen{position:relative;height:100%;border-radius:40px;overflow:hidden;display:flex;flex-direction:column;font-size:15px;line-height:1.3;background:var(--bg);color:var(--ink)}
+.phone.large .screen{font-size:26px;min-height:760px}
+.status{height:38px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:600 13px/1 system-ui;position:relative;z-index:3}
+.status .cam{width:11px;height:11px;border-radius:50%;background:#000;box-shadow:0 0 0 2px rgba(127,127,127,.25)}
+.status .sicons{display:flex;gap:4px;align-items:center}
+.content{flex:1;overflow:hidden;position:relative;z-index:1}
+.phone.large .content{overflow:visible}
+.dock{position:relative;flex:none;z-index:2}
+.gbar{height:20px;display:grid;place-items:center}
+.gbar::after{content:"";width:110px;height:4px;border-radius:4px;background:var(--ink);opacity:.35}
+.ic{width:1.3em;height:1.3em;flex:none;display:block}
+a{text-decoration:none;color:inherit}
+.tnum{font-variant-numeric:tabular-nums}
+.tokens{max-width:1240px;margin:0 auto;padding:8px 24px 48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.tokens section{background:#fff;border-radius:16px;padding:16px 18px}
+.tokens h3{font:700 13px system-ui;letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px;color:#55514a}
+.sw{display:flex;align-items:center;gap:8px;font:500 12px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;margin:4px 0;color:#333}
+.sw i{width:22px;height:22px;border-radius:6px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.notes{max-width:1240px;margin:0 auto;padding:0 24px 40px;font:400 14px/1.55 system-ui;color:#444}
+.notes ul{margin:6px 0 0;padding-left:18px}
+
+/* LIGHT TOKENS
+   --bg           #F4F6FF    canvas
+   --a1           #C7D2FE    aurora indigo
+   --a2           #A5F3FC    aurora cyan
+   --a3           #FBCFE8    aurora pink
+   --glass        #FFFFFFB8  frosted surface (72%)
+   --glassln      #FFFFFFE6  glass edge
+   --navglass     #FFFFFFD9  nav glass
+   --ink          #0F172A    text
+   --muted        #64748B    secondary
+   --track        #E2E8F0    ring track
+   --primary      #4F46E5    indigo
+   --pink         #EC4899    gradient end
+   --good         #059669    left / positive
+   --goodbg       #D1FAE5    positive pill
+   --warn         #D97706    warning
+   --warnbg       #FEF3C7    warning chip
+   --over         #DC2626    exceeded
+   --overbg       #FEE2E2    exceeded chip
+   --food         #F97316    food ring
+   --transport    #06B6D4    transport ring
+   --shopping     #EC4899    shopping ring
+   --bills        #6366F1    bills ring
+   --fun          #A855F7    fun ring
+*/
+/* DARK TOKENS
+   --bg           #070B1A    deep space
+   --a1           #312E81    aurora indigo
+   --a2           #155E75    aurora teal
+   --a3           #831843    aurora magenta
+   --glass        #FFFFFF12  frosted surface (7%)
+   --glassln      #FFFFFF1F  glass edge
+   --navglass     #141A30D9  nav glass
+   --ink          #E2E8F0    text
+   --muted        #94A3B8    secondary
+   --track        #FFFFFF1A  ring track
+   --primary      #818CF8    indigo
+   --pink         #F472B6    gradient end
+   --good         #34D399    left / positive
+   --goodbg       #064E3B    positive pill
+   --warn         #FBBF24    warning
+   --warnbg       #422006    warning chip
+   --over         #F87171    exceeded
+   --overbg       #450A0A    exceeded chip
+   --food         #FB923C    food ring
+   --transport    #22D3EE    transport ring
+   --shopping     #F472B6    shopping ring
+   --bills        #818CF8    bills ring
+   --fun          #C084FC    fun ring
+*/
+.light{--bg:#F4F6FF;--a1:#C7D2FE;--a2:#A5F3FC;--a3:#FBCFE8;--glass:#FFFFFFB8;--glassln:#FFFFFFE6;--navglass:#FFFFFFD9;--ink:#0F172A;--muted:#64748B;--track:#E2E8F0;--primary:#4F46E5;--pink:#EC4899;--good:#059669;--goodbg:#D1FAE5;--warn:#D97706;--warnbg:#FEF3C7;--over:#DC2626;--overbg:#FEE2E2;--food:#F97316;--transport:#06B6D4;--shopping:#EC4899;--bills:#6366F1;--fun:#A855F7}
+.dark{--bg:#070B1A;--a1:#312E81;--a2:#155E75;--a3:#831843;--glass:#FFFFFF12;--glassln:#FFFFFF1F;--navglass:#141A30D9;--ink:#E2E8F0;--muted:#94A3B8;--track:#FFFFFF1A;--primary:#818CF8;--pink:#F472B6;--good:#34D399;--goodbg:#064E3B;--warn:#FBBF24;--warnbg:#422006;--over:#F87171;--overbg:#450A0A;--food:#FB923C;--transport:#22D3EE;--shopping:#F472B6;--bills:#818CF8;--fun:#C084FC}
+
+.screen{background:radial-gradient(circle at 10% 2%,var(--a1) 0,transparent 42%),radial-gradient(circle at 95% 12%,var(--a2) 0,transparent 38%),radial-gradient(circle at 55% 42%,var(--a3) 0,transparent 40%),var(--bg)}
+.glass{background:var(--glass);border:1px solid var(--glassln);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.content{padding:.3em 1em 7em}
+.top{display:flex;align-items:center;gap:.6em;margin:.3em 0 .9em}
+.av{width:2.4em;height:2.4em;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--pink));flex:none}
+.hi{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.hi small{color:var(--muted);font-size:.75em}
+.hi b{font-weight:650;font-size:1.1em}
+.sync{margin-left:auto;display:flex;align-items:center;gap:.35em;font-size:.7em;font-weight:600;color:var(--warn);background:var(--warnbg);padding:.45em .7em;border-radius:999px;white-space:nowrap}
+.sync .ic{width:1.1em;height:1.1em}
+.hero{display:flex;align-items:center;gap:1.1em;border-radius:1.75em;padding:1.1em}
+.ring{--rc:var(--c,var(--primary));position:relative;width:4.4em;height:4.4em;flex:none;display:grid;place-items:center}
+.ring::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--rc) calc(var(--p)*1%),var(--track) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .55em),#000 calc(100% - .55em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .55em),#000 calc(100% - .55em + 1px))}
+.ring.big{width:7em;height:7em}
+.ring.big::before{background:conic-gradient(var(--primary),var(--pink) calc(var(--p)*1%),var(--track) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .8em),#000 calc(100% - .8em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .8em),#000 calc(100% - .8em + 1px))}
+.ri{position:relative;display:flex;flex-direction:column;align-items:center;color:var(--rc);line-height:1.05}
+.ring.big .ri b{font-size:1.55em;font-weight:700;color:var(--ink)}
+.ring.big .ri small{font-size:.72em;color:var(--muted)}
+.lap{position:absolute;inset:.7em;border-radius:50%;background:conic-gradient(var(--over) calc(var(--p)*1%),transparent 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .35em),#000 calc(100% - .35em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .35em),#000 calc(100% - .35em + 1px))}
+.htx{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.htx small{color:var(--muted);font-size:.75em;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.htx b{font-size:1.9em;font-weight:700;letter-spacing:-.02em;margin:.05em 0}
+.htx span{color:var(--muted);font-size:.82em}
+.htx em{font-style:normal;margin-top:.45em;width:fit-content;font-size:.75em;font-weight:700;color:var(--good);background:var(--goodbg);padding:.25em .65em;border-radius:999px}
+.hint{display:flex;align-items:center;gap:.75em;border-radius:999px;padding:.55em .9em .55em .55em;margin-top:.8em;font-size:.85em}
+.hint>span:nth-child(2){display:flex;flex-direction:column;line-height:1.2}
+.hint small{color:var(--muted);font-size:.85em}
+.orb{width:2.3em;height:2.3em;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:radial-gradient(circle at 30% 30%,var(--pink),var(--primary));box-shadow:0 0 0 .3em var(--glass),0 0 1.2em var(--pink);flex:none}
+.hint .gc{margin-left:auto;color:var(--muted)}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:1.1em .2em .6em}
+.sec b{font-weight:650;font-size:1.1em}
+.sec span{color:var(--muted);font-size:.75em}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:.65em}
+.tile{border-radius:1.5em;padding:.85em;display:flex;flex-direction:column;gap:.55em;background:var(--glass);border:1px solid var(--glassln)}
+.k-food{--c:var(--food)}.k-transport{--c:var(--transport)}.k-shopping{--c:var(--shopping)}.k-bills{--c:var(--bills)}.k-fun{--c:var(--fun)}
+.tile.warn{box-shadow:0 0 0 2px var(--warn),0 0 1.4em -.3em var(--warn)}
+.tile.warn .ring{--rc:var(--warn)}
+.tile.over{box-shadow:0 0 0 2px var(--over),0 0 1.4em -.3em var(--over)}
+.tile.over .ring{--rc:var(--over)}
+.tx{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.nm{font-weight:650;font-size:.95em}
+.tx b{font-weight:700;font-size:1.02em;margin-top:.1em}
+.tx b.neg{color:var(--over)}
+.tx small{color:var(--muted);font-size:.74em}
+.chip{margin-top:.4em;width:fit-content;font-size:.66em;font-weight:700;padding:.2em .6em;border-radius:999px;background:var(--track);color:var(--muted)}
+.chip.warn{background:var(--warnbg);color:var(--warn)}
+.chip.over{background:var(--overbg);color:var(--over)}
+.tile.add{align-items:center;justify-content:center;border:1.5px dashed var(--muted);background:transparent;color:var(--muted);font-size:.85em;font-weight:600;min-height:8em}
+.addc{width:2.4em;height:2.4em;border-radius:50%;display:grid;place-items:center;background:var(--track)}
+.privacy{display:flex;align-items:center;justify-content:center;gap:.4em;color:var(--muted);font-size:.72em;margin-top:1em}
+.privacy .ic{width:1.1em;height:1.1em}
+.nav{display:flex;margin:0 .9em .3em;border-radius:999px;padding:.35em;background:var(--navglass);border:1px solid var(--glassln);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 .8em 2em -1em rgba(15,23,42,.5)}
+.ni{flex:1;display:flex;align-items:center;justify-content:center;gap:.35em;height:2.8em;border-radius:999px;color:var(--muted)}
+.ni .nl{display:none;font-weight:700;font-size:.82em}
+.ni.on{flex:2.1;background:linear-gradient(135deg,var(--primary),var(--pink));color:#fff}
+.ni.on .nl{display:inline}
+.ind{position:relative;display:grid;place-items:center}
+.badge{position:absolute;top:-.55em;right:-.75em;min-width:1.55em;height:1.55em;border-radius:999px;background:var(--pink);color:#fff;font:800 .6em/1.55em system-ui;font-style:normal;text-align:center;box-shadow:0 0 0 .2em var(--bg)}
+.fab{position:absolute;right:1.1em;bottom:calc(100% + .9em);width:3.6em;height:3.6em;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--primary),var(--pink));box-shadow:0 0 0 .35em var(--glass),0 .6em 1.6em -.3em var(--pink)}
+.fab .ic{width:1.5em;height:1.5em}
+.large .tiles{grid-template-columns:1fr}
+.large .tile{flex-direction:column;align-items:flex-start}
+.large .hint .gc{display:none}
+.large .hint>span:nth-child(2){flex:1}
+.large .ring{width:3em;height:3em}
+.large .ring::before{-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - .35em),#000 calc(100% - .35em + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - .35em),#000 calc(100% - .35em + 1px))}
+.large .lap{inset:.5em}
+.large .ri .ic{width:1em;height:1em}
+.large .hero{flex-direction:column;align-items:flex-start}
+.large .ring.big{width:4.5em;height:4.5em}
+.large .htx b{font-size:1.35em}
+.large .tile.add{min-height:0;flex-direction:row;align-items:center}
+.large .hint{border-radius:1em}
+.large .sync span{display:none}
+.large .ni.on{flex:3}
+.large .ni.on .nl{font-size:.6em}
+.large .fab{width:2.4em;height:2.4em}
+.large .content{padding-bottom:4em}
+
+</style></head>
+<body>
+<header class="doc">
+<div class="crumb">Expense Tracker · Home page · Design direction</div>
+<h1>Orbit Rings</h1>
+<p class="why">Orbit Rings makes budgets feel like fitness goals. Each category is a progress ring you want to keep from closing, drawn on frosted glass over a soft aurora glow. The shape language is purely circular: rings, orbs, a floating pill nav and a round glowing FAB. Medium-weight type keeps it calm and premium. Motion feels like orbit: rings sweep in, an exceeded budget draws a second red "lap", and the aurora drifts slowly behind the content.</p>
+<a class="back" href="directions-index.html">← All directions</a>
+</header>
+<main class="frames"><figure><div class="phone light "><div class="screen"><div class="status"><span>9:41</span><span class="cam"></span><span class="sicons"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M2 20h3v-4H2zm5 0h3v-8H7zm5 0h3V8h-3zm5 0h3V4h-3z"/></svg><svg viewBox="0 0 24 24" width="20" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="11" height="6" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg></span></div><div class="content">
+<div class="top"><span class="av">S</span><div class="hi"><small>Good evening</small><b>Shylock</b></div>
+<span class="sync"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg><span>1 waiting to sync</span></span></div>
+<div class="hero glass"><div class="ring big" style="--p:74"><span class="ri"><b class="tnum">74%</b><small>used</small></span></div>
+<div class="htx"><small>October 2026</small><b class="tnum">₹14,500</b><span>spent of ₹19,500</span><em class="tnum">₹5,000 left</em></div></div>
+<a class="hint glass" data-testtag="home_inbox_hint"><span class="orb">3</span><span><b>New bank SMS</b><small>Review them in Inbox</small></span><svg class="ic gc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+<div class="sec"><b>Budgets</b><span>October</span></div>
+<div class="tiles"><div class="tile k-shopping over"><div class="ring" style="--p:100"><span class="lap" style="--p:11"></span><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l1 14H5z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg></span></div><div class="tx"><div class="nm">Shopping</div><b class="neg tnum">₹450 over</b><small>budget ₹4,000</small><span class="chip over">Exceeded</span></div></div><div class="tile k-food warn"><div class="ring" style="--p:85"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-2 2-2 2-4M13 7c0-2 2-2 2-4"/></svg></span></div><div class="tx"><div class="nm">Food</div><b class="tnum">₹900 left</b><small>of ₹6,000</small><span class="chip warn">85% · slow down</span></div></div><div class="tile k-bills ok"><div class="ring" style="--p:76"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span></div><div class="tx"><div class="nm">Bills</div><b class="tnum">₹1,200 left</b><small>of ₹5,000</small><span class="chip">76%</span></div></div><div class="tile k-transport ok"><div class="ring" style="--p:22"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8" cy="14.5" r="1"/><circle cx="16" cy="14.5" r="1"/></svg></span></div><div class="tx"><div class="nm">Transport</div><b class="tnum">₹2,350 left</b><small>of ₹3,000</small><span class="chip">22%</span></div></div><div class="tile k-fun ok"><div class="ring" style="--p:33"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span></div><div class="tx"><div class="nm">Fun</div><b class="tnum">₹1,000 left</b><small>of ₹1,500</small><span class="chip">33%</span></div></div><div class="tile add"><span class="addc"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>New budget</span></div></div>
+<div class="privacy"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Private: lives in your own Google Sheet</div>
+</div>
+<div class="dock"><a class="fab" data-testtag="add_expense_fab" aria-label="Add expense"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a><nav class="nav glass"><a class="ni on" data-testtag="nav_home"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="nl">Home</span></a><a class="ni" data-testtag="nav_expenses"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="nl">Expenses</span></a><a class="ni" data-testtag="nav_inbox"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><em class="badge" aria-label="3 new">3</em></span><span class="nl">Inbox</span></a><a class="ni" data-testtag="nav_budgets"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><span class="nl">Budgets</span></a><a class="ni" data-testtag="nav_settings"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><span class="nl">Settings</span></a></nav><div class="gbar"></div></div></div></div><figcaption>Light · 360 dp · font scale 1.0×<small></small></figcaption></figure><figure><div class="phone dark "><div class="screen"><div class="status"><span>9:41</span><span class="cam"></span><span class="sicons"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M2 20h3v-4H2zm5 0h3v-8H7zm5 0h3V8h-3zm5 0h3V4h-3z"/></svg><svg viewBox="0 0 24 24" width="20" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="11" height="6" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg></span></div><div class="content">
+<div class="top"><span class="av">S</span><div class="hi"><small>Good evening</small><b>Shylock</b></div>
+<span class="sync"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg><span>1 waiting to sync</span></span></div>
+<div class="hero glass"><div class="ring big" style="--p:74"><span class="ri"><b class="tnum">74%</b><small>used</small></span></div>
+<div class="htx"><small>October 2026</small><b class="tnum">₹14,500</b><span>spent of ₹19,500</span><em class="tnum">₹5,000 left</em></div></div>
+<a class="hint glass" data-testtag="home_inbox_hint"><span class="orb">3</span><span><b>New bank SMS</b><small>Review them in Inbox</small></span><svg class="ic gc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+<div class="sec"><b>Budgets</b><span>October</span></div>
+<div class="tiles"><div class="tile k-shopping over"><div class="ring" style="--p:100"><span class="lap" style="--p:11"></span><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l1 14H5z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg></span></div><div class="tx"><div class="nm">Shopping</div><b class="neg tnum">₹450 over</b><small>budget ₹4,000</small><span class="chip over">Exceeded</span></div></div><div class="tile k-food warn"><div class="ring" style="--p:85"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-2 2-2 2-4M13 7c0-2 2-2 2-4"/></svg></span></div><div class="tx"><div class="nm">Food</div><b class="tnum">₹900 left</b><small>of ₹6,000</small><span class="chip warn">85% · slow down</span></div></div><div class="tile k-bills ok"><div class="ring" style="--p:76"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span></div><div class="tx"><div class="nm">Bills</div><b class="tnum">₹1,200 left</b><small>of ₹5,000</small><span class="chip">76%</span></div></div><div class="tile k-transport ok"><div class="ring" style="--p:22"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8" cy="14.5" r="1"/><circle cx="16" cy="14.5" r="1"/></svg></span></div><div class="tx"><div class="nm">Transport</div><b class="tnum">₹2,350 left</b><small>of ₹3,000</small><span class="chip">22%</span></div></div><div class="tile k-fun ok"><div class="ring" style="--p:33"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span></div><div class="tx"><div class="nm">Fun</div><b class="tnum">₹1,000 left</b><small>of ₹1,500</small><span class="chip">33%</span></div></div><div class="tile add"><span class="addc"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>New budget</span></div></div>
+<div class="privacy"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Private: lives in your own Google Sheet</div>
+</div>
+<div class="dock"><a class="fab" data-testtag="add_expense_fab" aria-label="Add expense"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a><nav class="nav glass"><a class="ni on" data-testtag="nav_home"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="nl">Home</span></a><a class="ni" data-testtag="nav_expenses"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="nl">Expenses</span></a><a class="ni" data-testtag="nav_inbox"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><em class="badge" aria-label="3 new">3</em></span><span class="nl">Inbox</span></a><a class="ni" data-testtag="nav_budgets"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><span class="nl">Budgets</span></a><a class="ni" data-testtag="nav_settings"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><span class="nl">Settings</span></a></nav><div class="gbar"></div></div></div></div><figcaption>Dark · 360 dp · font scale 1.0×<small></small></figcaption></figure><figure><div class="phone dark large"><div class="screen"><div class="status"><span>9:41</span><span class="cam"></span><span class="sicons"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M2 20h3v-4H2zm5 0h3v-8H7zm5 0h3V8h-3zm5 0h3V4h-3z"/></svg><svg viewBox="0 0 24 24" width="20" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="11" height="6" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg></span></div><div class="content">
+<div class="top"><span class="av">S</span><div class="hi"><small>Good evening</small><b>Shylock</b></div>
+<span class="sync"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg><span>1 waiting to sync</span></span></div>
+<div class="hero glass"><div class="ring big" style="--p:74"><span class="ri"><b class="tnum">74%</b><small>used</small></span></div>
+<div class="htx"><small>October 2026</small><b class="tnum">₹14,500</b><span>spent of ₹19,500</span><em class="tnum">₹5,000 left</em></div></div>
+<a class="hint glass" data-testtag="home_inbox_hint"><span class="orb">3</span><span><b>New bank SMS</b><small>Review them in Inbox</small></span><svg class="ic gc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+<div class="sec"><b>Budgets</b><span>October</span></div>
+<div class="tiles"><div class="tile k-shopping over"><div class="ring" style="--p:100"><span class="lap" style="--p:11"></span><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l1 14H5z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg></span></div><div class="tx"><div class="nm">Shopping</div><b class="neg tnum">₹450 over</b><small>budget ₹4,000</small><span class="chip over">Exceeded</span></div></div><div class="tile k-food warn"><div class="ring" style="--p:85"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-2 2-2 2-4M13 7c0-2 2-2 2-4"/></svg></span></div><div class="tx"><div class="nm">Food</div><b class="tnum">₹900 left</b><small>of ₹6,000</small><span class="chip warn">85% · slow down</span></div></div><div class="tile k-bills ok"><div class="ring" style="--p:76"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span></div><div class="tx"><div class="nm">Bills</div><b class="tnum">₹1,200 left</b><small>of ₹5,000</small><span class="chip">76%</span></div></div><div class="tile k-transport ok"><div class="ring" style="--p:22"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8" cy="14.5" r="1"/><circle cx="16" cy="14.5" r="1"/></svg></span></div><div class="tx"><div class="nm">Transport</div><b class="tnum">₹2,350 left</b><small>of ₹3,000</small><span class="chip">22%</span></div></div><div class="tile k-fun ok"><div class="ring" style="--p:33"><span class="ri"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span></div><div class="tx"><div class="nm">Fun</div><b class="tnum">₹1,000 left</b><small>of ₹1,500</small><span class="chip">33%</span></div></div><div class="tile add"><span class="addc"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>New budget</span></div></div>
+<div class="privacy"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Private: lives in your own Google Sheet</div>
+</div>
+<div class="dock"><a class="fab" data-testtag="add_expense_fab" aria-label="Add expense"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a><nav class="nav glass"><a class="ni on" data-testtag="nav_home"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="nl">Home</span></a><a class="ni" data-testtag="nav_expenses"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="nl">Expenses</span></a><a class="ni" data-testtag="nav_inbox"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><em class="badge" aria-label="3 new">3</em></span><span class="nl">Inbox</span></a><a class="ni" data-testtag="nav_budgets"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><span class="nl">Budgets</span></a><a class="ni" data-testtag="nav_settings"><span class="ind"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><span class="nl">Settings</span></a></nav><div class="gbar"></div></div></div></div><figcaption>Dark · 320 dp narrow · font scale 1.75×<small>Full scroll length shown. Display sizes follow Android 14 non-linear scaling (they grow less than body text).</small></figcaption></figure></main>
+<div class="notes"><strong>Compose / M3 notes</strong><ul><li>Rings: Canvas drawArc with StrokeCap.Round and a 10–12% stroke. The exceeded "lap" is a second inner arc. Use a Brush.sweepGradient for the hero.</li><li>Glass: a translucent Surface with a 1.dp light border. Use Modifier.blur or RenderEffect on API 31+, and fall back to an opaque tonal surface on minSdk 24.</li><li>Nav: a floating pill (RoundedCornerShape(50)) is a custom NavigationBar. The selected item expands to show its label, so semantics stay intact for TalkBack.</li><li>Motion: animateFloatAsState with a 900 ms sweep for rings and a staggered tile entrance. The aurora drifts slowly with infiniteTransition, which is disabled when "Remove animations" is on.</li><li>Large text: the 2-column grid collapses to 1 column (BoxWithConstraints or adaptive by width), and the rings shrink to 4.dp-relative sizes.</li></ul></div>
+<div class="tokens"><section><h3>light tokens</h3><div class="sw"><i style="background:#F4F6FF"></i>--bg #F4F6FF <span style="color:#888">· canvas</span></div><div class="sw"><i style="background:#C7D2FE"></i>--a1 #C7D2FE <span style="color:#888">· aurora indigo</span></div><div class="sw"><i style="background:#A5F3FC"></i>--a2 #A5F3FC <span style="color:#888">· aurora cyan</span></div><div class="sw"><i style="background:#FBCFE8"></i>--a3 #FBCFE8 <span style="color:#888">· aurora pink</span></div><div class="sw"><i style="background:#FFFFFFB8"></i>--glass #FFFFFFB8 <span style="color:#888">· frosted surface (72%)</span></div><div class="sw"><i style="background:#FFFFFFE6"></i>--glassln #FFFFFFE6 <span style="color:#888">· glass edge</span></div><div class="sw"><i style="background:#FFFFFFD9"></i>--navglass #FFFFFFD9 <span style="color:#888">· nav glass</span></div><div class="sw"><i style="background:#0F172A"></i>--ink #0F172A <span style="color:#888">· text</span></div><div class="sw"><i style="background:#64748B"></i>--muted #64748B <span style="color:#888">· secondary</span></div><div class="sw"><i style="background:#E2E8F0"></i>--track #E2E8F0 <span style="color:#888">· ring track</span></div><div class="sw"><i style="background:#4F46E5"></i>--primary #4F46E5 <span style="color:#888">· indigo</span></div><div class="sw"><i style="background:#EC4899"></i>--pink #EC4899 <span style="color:#888">· gradient end</span></div><div class="sw"><i style="background:#059669"></i>--good #059669 <span style="color:#888">· left / positive</span></div><div class="sw"><i style="background:#D1FAE5"></i>--goodbg #D1FAE5 <span style="color:#888">· positive pill</span></div><div class="sw"><i style="background:#D97706"></i>--warn #D97706 <span style="color:#888">· warning</span></div><div class="sw"><i style="background:#FEF3C7"></i>--warnbg #FEF3C7 <span style="color:#888">· warning chip</span></div><div class="sw"><i style="background:#DC2626"></i>--over #DC2626 <span style="color:#888">· exceeded</span></div><div class="sw"><i style="background:#FEE2E2"></i>--overbg #FEE2E2 <span style="color:#888">· exceeded chip</span></div><div class="sw"><i style="background:#F97316"></i>--food #F97316 <span style="color:#888">· food ring</span></div><div class="sw"><i style="background:#06B6D4"></i>--transport #06B6D4 <span style="color:#888">· transport ring</span></div><div class="sw"><i style="background:#EC4899"></i>--shopping #EC4899 <span style="color:#888">· shopping ring</span></div><div class="sw"><i style="background:#6366F1"></i>--bills #6366F1 <span style="color:#888">· bills ring</span></div><div class="sw"><i style="background:#A855F7"></i>--fun #A855F7 <span style="color:#888">· fun ring</span></div></section><section><h3>dark tokens</h3><div class="sw"><i style="background:#070B1A"></i>--bg #070B1A <span style="color:#888">· deep space</span></div><div class="sw"><i style="background:#312E81"></i>--a1 #312E81 <span style="color:#888">· aurora indigo</span></div><div class="sw"><i style="background:#155E75"></i>--a2 #155E75 <span style="color:#888">· aurora teal</span></div><div class="sw"><i style="background:#831843"></i>--a3 #831843 <span style="color:#888">· aurora magenta</span></div><div class="sw"><i style="background:#FFFFFF12"></i>--glass #FFFFFF12 <span style="color:#888">· frosted surface (7%)</span></div><div class="sw"><i style="background:#FFFFFF1F"></i>--glassln #FFFFFF1F <span style="color:#888">· glass edge</span></div><div class="sw"><i style="background:#141A30D9"></i>--navglass #141A30D9 <span style="color:#888">· nav glass</span></div><div class="sw"><i style="background:#E2E8F0"></i>--ink #E2E8F0 <span style="color:#888">· text</span></div><div class="sw"><i style="background:#94A3B8"></i>--muted #94A3B8 <span style="color:#888">· secondary</span></div><div class="sw"><i style="background:#FFFFFF1A"></i>--track #FFFFFF1A <span style="color:#888">· ring track</span></div><div class="sw"><i style="background:#818CF8"></i>--primary #818CF8 <span style="color:#888">· indigo</span></div><div class="sw"><i style="background:#F472B6"></i>--pink #F472B6 <span style="color:#888">· gradient end</span></div><div class="sw"><i style="background:#34D399"></i>--good #34D399 <span style="color:#888">· left / positive</span></div><div class="sw"><i style="background:#064E3B"></i>--goodbg #064E3B <span style="color:#888">· positive pill</span></div><div class="sw"><i style="background:#FBBF24"></i>--warn #FBBF24 <span style="color:#888">· warning</span></div><div class="sw"><i style="background:#422006"></i>--warnbg #422006 <span style="color:#888">· warning chip</span></div><div class="sw"><i style="background:#F87171"></i>--over #F87171 <span style="color:#888">· exceeded</span></div><div class="sw"><i style="background:#450A0A"></i>--overbg #450A0A <span style="color:#888">· exceeded chip</span></div><div class="sw"><i style="background:#FB923C"></i>--food #FB923C <span style="color:#888">· food ring</span></div><div class="sw"><i style="background:#22D3EE"></i>--transport #22D3EE <span style="color:#888">· transport ring</span></div><div class="sw"><i style="background:#F472B6"></i>--shopping #F472B6 <span style="color:#888">· shopping ring</span></div><div class="sw"><i style="background:#818CF8"></i>--bills #818CF8 <span style="color:#888">· bills ring</span></div><div class="sw"><i style="background:#C084FC"></i>--fun #C084FC <span style="color:#888">· fun ring</span></div></section></div>
+</body></html>
