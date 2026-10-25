@@ -191,7 +191,7 @@ Versions live in `gradle/libs.versions.toml`. These are the pins verified on 202
 | Android Gradle Plugin | 9.4.1 |
 | Kotlin (Android and JVM plugins) | 2.4.21 |
 | KSP | 2.3.12 |
-| compileSdk / targetSdk / minSdk | 36 / 36 / 24 |
+| compileSdk / targetSdk / minSdk | 37 / 36 / 24 |
 | Java target | 11 |
 | Compose BOM | 2026.09.00 |
 | AndroidX Lifecycle | 2.11.0 |
@@ -208,6 +208,10 @@ Versions live in `gradle/libs.versions.toml`. These are the pins verified on 202
 | Moshi | 1.15.2 |
 | Robolectric / Roborazzi | 4.17 / 1.76.0 |
 | Google Sheets API / Drive API | REST v4 / REST v3 |
+
+Changes since 2026-10-08:
+- **2026-10-25, compileSdk raised from 36 to 37 (user decision in story 1.1).** Compose BOM 2026.09.00 (Compose 1.12) and Lifecycle 2.11.0 need compileSdk 37 or newer. targetSdk stays 36.
+- **2026-10-25, Robolectric 4.17 constraint.** Robolectric 4.17 has no API 37 image, so tests are pinned to `sdk=36` in `app/src/test/resources/robolectric.properties`. Its SDK 36 sandbox needs Java 21, so `:app`'s `Test` tasks run on a Java 21 toolchain, which foojay downloads if it's missing. Gradle itself runs on JDK 17 or newer. CI needs JDK 21 available, or network access to download it.
 
 ## Structural Seed
 

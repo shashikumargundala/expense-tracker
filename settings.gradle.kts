@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "My Application"
+rootProject.name = "ExpenseTracker"
 
-include(":app")
+include(":domain", ":data", ":app")

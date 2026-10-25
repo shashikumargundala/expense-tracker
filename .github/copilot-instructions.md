@@ -1,60 +1,49 @@
 # Copilot instructions
 
-## Project overview
+<!-- Keep this file in sync with CLAUDE.md. -->
 
-This is a single-module Android application (`:app`) named Expense Tracker. It uses Kotlin, Jetpack Compose, Material 3, Java 11 source compatibility, and an Android API 36 compile/target SDK.
+## Project
 
-The runtime flow is:
+An offline-first Android expense tracker that will sync with a Google Sheet. It's built as three Gradle modules following Clean Architecture, with Kotlin, Jetpack Compose, Material 3 and Hilt. `applicationId` and app namespace are `com.shashi.expensetracker`. Toolchain: AGP 9.4.1 (built-in Kotlin, so no `kotlin-android` plugin), Kotlin 2.4.21, KSP 2.3.12, Gradle 9.6.0, JDK 17, Java target 11, compileSdk 37, targetSdk 36, minSdk 24 (Compose 1.12 and Lifecycle 2.11 require compileSdk 37).
 
-- `MainActivity` creates the Room database, repository, and `ExpenseViewModel`, then chooses between `LoginScreen` and `MainAppContent`.
-- `ExpenseViewModel` owns UI state and user actions. It exposes Room `Flow`s as lifecycle-aware `StateFlow`s and performs repository work in `viewModelScope`.
-- `ExpenseRepository` is the data boundary. It reads and writes `ExpenseEntity` and `CategoryEntity` through Room, stores session/sync settings in `SharedPreferences`, bootstraps default categories, and optionally synchronizes rows with Google Sheets.
-- `AppDatabase`, `ExpenseDao`, and `CategoryDao` provide the local offline-first store. Expenses are marked with `synced`; unsynced local rows are pushed when Sheets is configured.
-- `GoogleSheetsService` and `RetrofitClient` wrap the Sheets REST API. OAuth authorization returns to `MainActivity` through the `com.example.expensetracker://oauth2callback` deep link.
-- Most UI composables currently live in `app/src/main/java/com/example/MainActivity.kt`; theme definitions are under `com.example.ui.theme`.
+The architecture spine at `_bmad-output/initiative-expense-tracker/architecture-expense-tracker/architecture-expense-tracker.md` is the source of truth for design decisions (AD-1 to AD-20) and Stack versions. `.github/copilot-instructions.md` holds the same guidance. Keep the two files in sync.
 
-Keep new persistence and synchronization behavior in the data/repository layer rather than directly in composables. Preserve the offline-first behavior: local database writes should succeed independently of a failed Sheets request.
+## Commands
 
-## Build, test, and lint
-
-Run commands from the repository root with the Gradle wrapper:
+Run all commands from the repo root using the Gradle wrapper:
 
 ```bash
-# Build the debug APK
-./gradlew :app:assembleDebug
-
-# Run all local JVM unit tests
-./gradlew :app:testDebugUnitTest
-
-# Run one test class
-./gradlew :app:testDebugUnitTest --tests "com.example.ExampleUnitTest"
-
-# Run one test method
-./gradlew :app:testDebugUnitTest --tests "com.example.ExampleUnitTest.addition_isCorrect"
-
-# Run Robolectric/Compose screenshot tests individually
-./gradlew :app:testDebugUnitTest --tests "com.example.GreetingScreenshotTest"
-
-# Run Android instrumentation tests on a connected device or emulator
-./gradlew :app:connectedDebugAndroidTest
-
-# Run Android lint
-./gradlew :app:lintDebug
+./gradlew assembleDebug test                      # build the debug APK and run all JVM tests in every module
+./gradlew :domain:test                            # pure JVM tests for :domain
+./gradlew :app:testDebugUnitTest                  # :app JVM tests (incl. Robolectric Compose tests)
+./gradlew :app:testDebugUnitTest --tests "com.shashi.expensetracker.greeting.GreetingViewModelTest"   # one class
+./gradlew :domain:test --tests "com.shashi.expensetracker.domain.greeting.GetGreetingUseCaseTest"     # one class
+./gradlew :app:lintDebug                          # Android lint
+./gradlew :domain:dependencies --configuration runtimeClasspath   # confirm :domain has no Android deps
 ```
 
-Local JVM tests are in `app/src/test`; device tests are in `app/src/androidTest`. `GreetingScreenshotTest` uses Robolectric, Compose test rules, and Roborazzi and writes its image to `app/src/test/screenshots/greeting.png`.
+- **Debug signing:** debug builds use AGP's default debug keystore (`~/.android/debug.keystore`, created on the first debug build). No keystore lives in the repo.
+- **Secrets:** there is no Secrets Gradle plugin and no `.env`. Nothing secret is committed.
+- Release signing and R8 are not configured yet (story 1.2).
 
-For local setup, Android Studio is the expected environment. The Secrets Gradle Plugin reads `.env` and falls back to `.env.example`; create `.env` with the required `GEMINI_API_KEY` when following the README setup. Do not commit `.env`, OAuth credentials, tokens, or keystores. The debug build is configured to use the repository's `debug.keystore`; the README notes removing that signing override when importing/running the generated project if the keystore is unavailable.
+## Architecture
 
-## Repository-specific conventions
+Dependencies point inward only (AD-1):
 
-- Use Room entities/DAOs for expense and category data. `CategoryEntity.name` is the primary key, so category names must be treated as unique.
-- Expose observable data from DAOs as `Flow<List<...>>`; convert it to UI state in `ExpenseViewModel` with `stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ...)`.
-- Keep blocking database and network work off the main thread. Repository methods use `withContext(Dispatchers.IO)` and callers launch them from `viewModelScope`.
-- New expenses start with `synced = false`; only mark them synced after a successful Sheets write. Sheets failures are reported through the existing `syncMessage`/logging flow while retaining local data.
-- Persist session configuration through the repository's `SharedPreferences` properties rather than reading preferences directly from composables or the activity.
-- OAuth callback handling belongs in `MainActivity.handleIntent`; keep the existing custom scheme and host when changing authentication.
-- Compose screens use `testTag` values for interaction tests. Preserve existing tags when changing controls, and add tags for new user-critical actions.
-- UI actions generally mutate `ExpenseViewModel` state and let Room flows recompose the screen. Avoid duplicating database state in composables.
-- Budget analytics are derived from the expense flow: category spend is grouped by category name, and alerts are emitted at 80% (`WARNING`) and 100% (`CRITICAL`) of a positive category budget.
-- Dependencies are managed through `gradle/libs.versions.toml` and referenced with version-catalog aliases in `app/build.gradle.kts`; add or update aliases there instead of hard-coding versions in module build logic.
+- **`:domain`** (pure Kotlin/JVM, `com.shashi.expensetracker.domain.*`): entities, use cases and `*Gateway` / `*Repository` interfaces. Its only dependencies are `javax.inject` and `kotlinx-coroutines-core`. No Android, Room, Retrofit or Google dependency is allowed.
+- **`:data`** (Android library, `com.shashi.expensetracker.data.*`): implementations of the domain interfaces plus the Hilt modules that bind them. Depends on `:domain`.
+- **`:app`** (Android application, `com.shashi.expensetracker.*`): the `@HiltAndroidApp` `ExpenseTrackerApp`, the `@AndroidEntryPoint` `MainActivity`, Compose screens and `@HiltViewModel`s. Depends on `:domain` and `:data`, but app code imports only `:domain` types; `:data` is there only so Hilt can install its bindings.
+
+Hilt wires every dependency (AD-16) via KSP. Inside each module, code is grouped by feature package.
+
+The current code is a tracer: `greeting` goes from `GetGreetingUseCase` (`:domain`) through `StubGreetingGateway` (`:data`, bound by `GreetingModule`) to `GreetingViewModel` and `GreetingScreen` (`:app`). Story 1.5 replaces it with the Home screen.
+
+## Conventions
+
+- Use cases are `VerbNounUseCase` classes with one public `operator fun invoke`. They return a sealed result (success or a named failure) and never throw to callers.
+- Outside systems are behind `*Gateway` interfaces, stored data behind `*Repository` interfaces, both defined in `:domain` and implemented in `:data`.
+- Each screen has one ViewModel exposing one immutable `<Screen>UiState` as a `StateFlow`. ViewModels depend only on `:domain` use cases and turn failures into `UiState` messages.
+- Interactive and key UI elements use `testTag` (for example `greeting_text`). Keep existing tags and add tags to new user-critical actions.
+- No `.kt` file may exceed 500 lines (AD-17).
+- Dependencies and plugins go through `gradle/libs.versions.toml` aliases. Don't hard-code versions in module build files. The catalog already holds the Stack libraries later epics need.
+- Source lives in `src/main/kotlin` and `src/test/kotlin`.

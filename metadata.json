@@ -1,6 +1,0 @@
-{
-  "name": "Expense Tracker",
-  "description": "An elegant expense tracking application that integrates with Google Sheets, stores data locally with Room, offers customizable category tags, monthly budget alerts, and beautiful analytics charts.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
