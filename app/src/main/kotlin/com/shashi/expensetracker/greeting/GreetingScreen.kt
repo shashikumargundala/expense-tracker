@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import com.shashi.expensetracker.ui.theme.ExpenseTrackerTheme
 
 @Composable
 fun GreetingScreen(uiState: GreetingUiState, modifier: Modifier = Modifier) {
@@ -33,5 +34,5 @@ fun GreetingScreen(uiState: GreetingUiState, modifier: Modifier = Modifier) {
 @Preview
 @Composable
 private fun GreetingScreenPreview() {
-  MaterialTheme { GreetingScreen(uiState = GreetingUiState(message = "Hello, Expense Tracker!")) }
+  ExpenseTrackerTheme { GreetingScreen(uiState = GreetingUiState(message = "Hello, Expense Tracker!")) }
 }

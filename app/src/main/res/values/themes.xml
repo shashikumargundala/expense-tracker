@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.ExpenseTracker" parent="android:Theme.DeviceDefault.NoActionBar" />
+    <!-- Compose draws the Jelly Pop theme; the window only paints the canvas before first frame.
+         values-night/colors.xml swaps the canvas for dark mode. -->
+    <style name="Theme.ExpenseTracker" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/surface_canvas</item>
+    </style>
 </resources>
