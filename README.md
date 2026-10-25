@@ -1,21 +1,18 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Expense Tracker
 
-# Run and deploy your AI Studio app
+An offline-first Android expense tracker that syncs with your own Google Sheet. It's built with Kotlin, Jetpack Compose, Material 3 and Hilt, in three Gradle modules: `:domain`, `:data` and `:app`.
 
-This contains everything you need to run your app locally.
+## Run locally
 
-View your app in AI Studio: https://ai.studio/apps/6e3fb7f2-ca55-4365-a9c1-52c97bf15e38
+**Prerequisites:**
+- A recent [Android Studio](https://developer.android.com/studio) that supports AGP 9.4.1.
+- JDK 17 or newer to run Gradle.
+- Unit tests run on a Java 21 toolchain, which Gradle downloads if it's missing.
 
-## Run Locally
+1. Open the project directory in Android Studio, or run commands from the repo root.
+2. Build and test: `./gradlew assembleDebug test`. The first build downloads Gradle 9.6.0, the dependencies, Android SDK platform 37 and, if needed, JDK 21, so it can take a while.
+3. Install on a connected device or emulator: `./gradlew :app:installDebug`
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+Debug builds are signed with your default Android debug key (`~/.android/debug.keystore`). No `.env` file or keystore in the repo is needed.
 
-
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+See `CLAUDE.md` for the conventions, and the architecture spine in `_bmad-output/initiative-expense-tracker/architecture-expense-tracker/` for the design decisions.
