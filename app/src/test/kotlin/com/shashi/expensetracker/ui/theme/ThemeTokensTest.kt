@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -32,7 +33,9 @@ class ThemeTokensTest {
       "primary" to { s, _ -> s.primary },
       "gradient-start" to { _, e -> e.gradientStart },
       "gradient-end" to { _, e -> e.gradientEnd },
-      "on-gradient" to { s, _ -> s.onPrimary },
+      "on-gradient" to { _, e -> e.onGradient },
+      "on-primary" to { s, _ -> s.onPrimary },
+      "on-exceeded" to { s, _ -> s.onError },
       "indicator" to { s, _ -> s.secondaryContainer },
       "ring-track" to { s, _ -> s.surfaceContainerHighest },
       "warning" to { _, e -> e.warning },
@@ -78,14 +81,29 @@ class ThemeTokensTest {
     assertEquals(SurfaceCanvasDark, renderSystemDefault().background)
   }
 
+  @Test
+  fun darkOnPrimaryAndBadgeTextMeetAA() {
+    val (scheme, _) = render(dark = true)
+    val onPrimary = contrast(scheme.onPrimary, scheme.primary)
+    val badge = contrast(scheme.onError, scheme.error)
+    assertTrue("dark onPrimary on primary is $onPrimary:1", onPrimary >= 4.5)
+    assertTrue("dark badge text (onError) on error is $badge:1", badge >= 4.5)
+  }
+
+  /** WCAG 2 contrast ratio of two opaque colors. */
+  private fun contrast(a: Color, b: Color): Double {
+    val (hi, lo) = listOf(a.luminance(), b.luminance()).sortedDescending()
+    return (hi + 0.05) / (lo + 0.05)
+  }
+
   private fun assertTokens(dark: Boolean) {
     val all = DesignTokens.colorTokens()
     val tokens =
       if (dark) all.filterKeys { it.endsWith("-dark") }.mapKeys { it.key.removeSuffix("-dark") }
       else all.filterKeys { !it.endsWith("-dark") }
-    // DESIGN.md front matter holds 37 color tokens per mode: 20 base, 10 category and 7 derived.
-    // The plan's "38" was a miscount. Every light token must have a -dark twin.
-    assertEquals("DESIGN.md color token count (${if (dark) "dark" else "light"})", 37, tokens.size)
+    // DESIGN.md front matter holds 39 color tokens per mode: 22 base (on-primary and on-exceeded
+    // added in story 1.8), 10 category and 7 derived. Every light token must have a -dark twin.
+    assertEquals("DESIGN.md color token count (${if (dark) "dark" else "light"})", 39, tokens.size)
     assertEquals(
       "Light and dark token names differ",
       all.keys.filterNot { it.endsWith("-dark") }.toSet(),

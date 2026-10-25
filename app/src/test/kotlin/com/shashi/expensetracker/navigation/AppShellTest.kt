@@ -33,6 +33,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 private val screenTags =
   mapOf(
@@ -204,6 +205,48 @@ class PillNavTest {
     composeRule.mainClock.advanceTimeByFrame()
 
     assertTrue(abs(composeRule.onNodeWithTag("nav_budgets").widthDp() - activeWidth) <= 0.5f)
+  }
+
+  @Test
+  @Config(fontScale = 1.75f)
+  fun activeItemIsIconOnlyAtLargeFontButTalkBackReadsLabel() {
+    setPillNav(badgeCount = 0, selected = TopLevelDestination.Expenses)
+
+    composeRule.onNodeWithText("Expenses", useUnmergedTree = true).assertDoesNotExist()
+    composeRule
+      .onNodeWithTag("nav_expenses")
+      .assertIsSelected()
+      .assertContentDescriptionEquals("Expenses")
+  }
+
+  // Native graphics, because legacy Robolectric text measures near zero width and always fits.
+  @Test
+  @GraphicsMode(GraphicsMode.Mode.NATIVE)
+  @Config(qualifiers = "w320dp-h800dp")
+  fun activeLabelThatDoesNotFitAt320dpIsIconOnlyButTalkBackReadsLabel() {
+    setPillNav(badgeCount = 0, selected = TopLevelDestination.Expenses)
+
+    composeRule.onNodeWithText("Expenses", useUnmergedTree = true).assertDoesNotExist()
+    composeRule
+      .onNodeWithTag("nav_expenses")
+      .assertIsSelected()
+      .assertContentDescriptionEquals("Expenses")
+  }
+
+  @Test
+  @Config(fontScale = 1.75f)
+  fun activeRailItemIsIconOnlyAtLargeFontButTalkBackReadsLabel() {
+    composeRule.setContent {
+      ExpenseTrackerTheme {
+        AppNavRail(selected = TopLevelDestination.Expenses, onSelect = {})
+      }
+    }
+
+    composeRule.onNodeWithText("Expenses", useUnmergedTree = true).assertDoesNotExist()
+    composeRule
+      .onNodeWithTag("nav_expenses")
+      .assertIsSelected()
+      .assertContentDescriptionEquals("Expenses")
   }
 
   private fun SemanticsNodeInteraction.widthDp(): Float = getBoundsInRoot().width.value

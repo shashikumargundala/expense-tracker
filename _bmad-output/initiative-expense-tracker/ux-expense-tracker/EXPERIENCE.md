@@ -102,7 +102,7 @@ These are behavioral rules only. Visual specs live in `DESIGN.md` Components.
 | Category editor (sheet) | Budgets | Edits the monthly Budget (applies to this Budget Month and later ones; past months keep theirs, FR-19), the name (must be unique), the color (eight swatches) and the icon. **Delete category** opens a confirmation that requires choosing where the Category's Expenses go (FR-17). "Add category" opens the same editor empty, with the next unused color and a default icon. |
 | Delete dialog (`{components.dialog}`) | Expenses, Category editor | Cancel returns the row or editor unchanged. Delete is the filled red action. The delete-Expense dialog reads "Delete ₹2,300 Amazon?" / "This also removes it from your Google Sheet." / Cancel, Delete. The delete-Category dialog reads "Move its N expenses to:", then a Category picker, then Delete. |
 | Snackbar (`{components.snackbar}`) | Above the nav | Confirms saves ("₹450 added to Food"). After a Dismiss it shows "Dismissed · Undo" for 5 seconds. Announced by TalkBack. |
-| Pill nav (`{components.pill-nav}`) | All tabs | Five items. The active item shows its label, and inactive items show icons with TalkBack labels. The Inbox badge shows the Inbox Item count and updates live. At 600dp and wider, a navigation rail replaces it with the same behavior. |
+| Pill nav (`{components.pill-nav}`) | All tabs | Five items. The active item shows its label (icon only above 1.3x font or when the label doesn't fit; TalkBack still reads it), and inactive items show icons with TalkBack labels. The Inbox badge shows the Inbox Item count and updates live. At 600dp and wider, a navigation rail replaces it with the same behavior. |
 
 ## State Patterns
 

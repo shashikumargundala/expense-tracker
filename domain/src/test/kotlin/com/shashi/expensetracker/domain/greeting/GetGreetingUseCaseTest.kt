@@ -20,6 +20,13 @@ class GetGreetingUseCaseTest {
   }
 
   @Test
+  fun `trims a padded name in the greeting`() = runTest {
+    val useCase = GetGreetingUseCase(FakeGreetingGateway { "  Shashi \n" })
+
+    assertEquals(GreetingResult.Success("Hello, Shashi!"), useCase())
+  }
+
+  @Test
   fun `returns NameUnavailable when gateway throws`() = runTest {
     val useCase = GetGreetingUseCase(FakeGreetingGateway { error("offline") })
 

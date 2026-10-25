@@ -40,6 +40,7 @@ import com.shashi.expensetracker.navigation.components.NavItemHeight
 import com.shashi.expensetracker.navigation.components.navActiveBrush
 import com.shashi.expensetracker.navigation.components.navItemDescription
 import com.shashi.expensetracker.navigation.components.navSizeAnimationSpec
+import com.shashi.expensetracker.navigation.components.showActiveNavLabel
 import com.shashi.expensetracker.ui.theme.ExpenseTrackerTheme
 import com.shashi.expensetracker.ui.theme.PillShape
 import com.shashi.expensetracker.ui.theme.glassSurface
@@ -50,6 +51,9 @@ private val NavRailPadding = 8.dp
 /** Width of each rail item; the active pill fills it. */
 private val NavRailItemWidth = 80.dp
 
+/** Horizontal padding around the active rail item's label. */
+private val NavRailLabelPadding = 4.dp
+
 /** The active rail item is taller so its label fits under the icon. */
 private val NavRailActiveItemHeight = 56.dp
 
@@ -59,6 +63,7 @@ val NavRailWidth: Dp = NavRailItemWidth + NavRailPadding * 2
 /**
  * The navigation rail for widths of 600dp and more (DESIGN.md components.pill-nav). A vertical
  * floating glass pill with the same five items, gradient active item and Inbox badge as [PillNav].
+ * Like the pill, the active item shows its icon only above 1.3x font or when its label doesn't fit.
  */
 @Composable
 fun AppNavRail(
@@ -105,7 +110,9 @@ private fun NavRailItem(
   val label = stringResource(destination.label)
   val description = navItemDescription(label, badgeCount)
   val contentColor =
-    if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    if (selected) ExpenseTrackerTheme.extendedColors.onGradient
+    else MaterialTheme.colorScheme.onSurfaceVariant
+  val showLabel = selected && showActiveNavLabel(label, NavRailItemWidth - NavRailLabelPadding * 2)
   val interactionSource = remember { MutableInteractionSource() }
   Box(
     contentAlignment = Alignment.Center,
@@ -139,14 +146,14 @@ private fun NavRailItem(
         )
         NavBadge(count = badgeCount, modifier = Modifier.align(Alignment.TopEnd).offset(x = 8.dp, y = (-6).dp))
       }
-      if (selected) {
+      if (showLabel) {
         Text(
           text = label,
           color = contentColor,
           style = MaterialTheme.typography.labelMedium,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis,
-          modifier = Modifier.padding(horizontal = 4.dp),
+          modifier = Modifier.padding(horizontal = NavRailLabelPadding),
         )
       }
     }

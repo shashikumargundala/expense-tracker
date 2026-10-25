@@ -1,7 +1,8 @@
 name: CI
 
+# PRs only: a push trigger would run every PR commit twice (different refs, so the concurrency
+# group can't dedupe them).
 on:
-  push:
   pull_request:
 
 concurrency:

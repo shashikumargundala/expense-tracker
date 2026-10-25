@@ -22,7 +22,7 @@ private const val MAX_SHOWN_COUNT = 99
 
 /**
  * The Inbox count badge shared by the pill nav and the rail (DESIGN.md components.pill-nav.badge):
- * `{colors.exceeded}` with on-gradient text. Draws nothing when [count] is 0 or less. The badge adds
+ * `{colors.exceeded}` with `{colors.on-exceeded}` text. Draws nothing when [count] is 0 or less. The badge adds
  * no semantics itself; its nav item speaks it through [navItemDescription].
  */
 @Composable
@@ -41,7 +41,7 @@ fun NavBadge(count: Int, modifier: Modifier = Modifier) {
   ) {
     Text(
       text = shown,
-      // onError is on-gradient (Theme.kt), the badge text color DESIGN.md names.
+      // onError is on-exceeded (Theme.kt), the badge text color DESIGN.md names.
       color = MaterialTheme.colorScheme.onError,
       style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
     )
