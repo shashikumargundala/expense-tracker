@@ -33,3 +33,6 @@
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-five-tab-shell-with-pill-nav-and-rail-plan.md`
   summary: Check on a device that the active pill label ("Expenses", "Settings") isn't cut off on 360dp and narrower phones, or at 1.75x font. Unverified; medium if true.
   evidence: The arithmetic leaves about 53dp for a 12sp/650 label at 360dp and about 34dp at 320dp, with `maxLines = 1` and ellipsis. Robolectric's text metrics can't measure it. A device check at 320dp and 360dp, at font scale 1.0 and 1.75, settles it.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-roborazzi-screenshot-harness-for-the-shell-plan.md`
+  summary: The active pill label is cut off at 1.75x font on a 360dp screen. This is verified for "Home" (`shell_home_font175.png` shows "Ho…") and confirms part of the 1.5 truncation entry above, whose 320dp and longer-label ("Expenses", "Settings") checks are still open.
+  evidence: The 1.6 baseline at `fontScale = 1.75f` on a `w360dp` screen shows the active Home label ellipsized. At font scale 1.0 on 360dp, "Home" fits (`shell_home_light.png`). A fix, such as icon-only above a font-scale threshold or a wider active item, will change the `font175` baseline.

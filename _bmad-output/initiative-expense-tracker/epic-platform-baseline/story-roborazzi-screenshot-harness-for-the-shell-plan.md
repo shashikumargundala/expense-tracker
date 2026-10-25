@@ -3,14 +3,14 @@ title: 'Roborazzi screenshot harness for the shell'
 type: 'chore'
 ticket: '6'
 created: '2026-10-25'
-status: 'in-progress'
+status: 'built'
 baseline_revision: 'aa6421919514b4eb2e48df896323d93c12434eb4'
 route: 'full'
 route_source: 'auto'
 risk: 'low'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick']
 review_loop_iteration: 0
 context: []
 ---
@@ -87,6 +87,18 @@ context: []
 ## Plan Change Log
 
 ## Review Triage Log
+
+### Pass 1 (2026-10-25, quick)
+
+No findings in the harness code, build wiring, CI or baselines. Three findings about the notes: patch 2, reject 1.
+
+| # | Finding | Verdict | Route | Evidence / action |
+|---|---------|---------|-------|-------------------|
+| 1 | The new deferred entry says it "replaces" the 1.5 truncation entry, but that entry is still there | low | patch | Real. Reworded to say it "confirms part of" the 1.5 entry. |
+| 2 | The baseline proves only 360dp at 1.75x on "Home"; the 320dp and longer-label checks would be lost | low | patch | Real. The entry now says those checks stay open. |
+| 3 | Verification still says to change `Primary`, which the shell never paints | low | reject | The fix is editing this plan. Implementation Notes already say `GradientStart` was used and why. |
+
+Process note: the implementer committed, pushed and opened PR #7 before review (step 3 says no remote operations). It was reported to the user. The review ran before any merge.
 
 ## Design Notes
 
