@@ -1,12 +1,12 @@
 package com.shashi.expensetracker.greeting
 
 import android.app.Application
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.shashi.expensetracker.ui.theme.ExpenseTrackerTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,7 +22,7 @@ class GreetingScreenTest {
   @Test
   fun showsGreetingText() {
     composeRule.setContent {
-      MaterialTheme { GreetingScreen(uiState = GreetingUiState(message = "Hello, Shashi!")) }
+      ExpenseTrackerTheme { GreetingScreen(uiState = GreetingUiState(message = "Hello, Shashi!")) }
     }
 
     composeRule
@@ -33,7 +33,7 @@ class GreetingScreenTest {
 
   @Test
   fun showsLoadingIndicatorBeforeGreetingArrives() {
-    composeRule.setContent { MaterialTheme { GreetingScreen(uiState = GreetingUiState()) } }
+    composeRule.setContent { ExpenseTrackerTheme { GreetingScreen(uiState = GreetingUiState()) } }
 
     composeRule.onNodeWithTag("greeting_loading").assertIsDisplayed()
   }

@@ -21,3 +21,9 @@
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-ci-with-the-500-line-check-plan.md`
   summary: Avoid duplicate CI runs on PR branches, for example by limiting `push` to `master`, which needs the user's agreement to change story 1.3's "every push" intent.
   evidence: `.github/workflows/ci.yml` triggers on both `push` and `pull_request`. Their refs differ (`refs/heads/*` and `refs/pull/*/merge`), so the concurrency group doesn't dedupe them, and each commit runs `./gradlew build` twice.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-jelly-pop-theme-from-design-md-plan.md`
+  summary: Decide dark mode's `onPrimary`, because DESIGN.md maps on-gradient (#FFFFFF) to `onPrimary`, but white on dark `primary` #C4B5FD is about 1.85:1 and fails WCAG AA for M3 filled buttons, switches and checkboxes.
+  evidence: The mapping only holds on the gradient. A fix needs a DESIGN.md change, for example dark `onPrimary` = surface-canvas-dark #171021 (about 10:1), or a rule that primary controls always draw the gradient. `secondary`/`tertiary` derive from `primary` in `Theme.kt` and would follow.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-jelly-pop-theme-from-design-md-plan.md`
+  summary: When sheets arrive, pass `scrimColor = MaterialTheme.colorScheme.scrim` so the token's alpha (45% light, 65% dark) applies.
+  evidence: M3's `BottomSheetDefaults.ScrimColor` is `colorScheme.scrim.copy(alpha = 0.32f)`, which replaces the token's alpha.
