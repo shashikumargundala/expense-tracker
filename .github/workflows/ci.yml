@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      # JDK 21 runs Gradle and is also the Java 21 toolchain the :app Robolectric tests need.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Caches Gradle and validates the wrapper.
+      - uses: gradle/actions/setup-gradle@v6
+
+      # Assemble, unit tests, lint and the 500-line check (checkKotlinFileLength). Release stays unsigned.
+      - run: ./gradlew build --console=plain
+
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports
+          path: |
+            **/build/reports/
+            **/build/test-results/
+          if-no-files-found: ignore
