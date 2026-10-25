@@ -1,4 +1,4 @@
-package com.shashi.expensetracker.greeting
+package com.shashi.expensetracker.home
 
 import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
@@ -15,16 +15,17 @@ import org.robolectric.annotation.Config
 // A plain Application keeps the Hilt graph out of this stateless screen test.
 @RunWith(AndroidJUnit4::class)
 @Config(application = Application::class)
-class GreetingScreenTest {
+class HomeScreenTest {
 
   @get:Rule val composeRule = createComposeRule()
 
   @Test
   fun showsGreetingText() {
     composeRule.setContent {
-      ExpenseTrackerTheme { GreetingScreen(uiState = GreetingUiState(message = "Hello, Shashi!")) }
+      ExpenseTrackerTheme { HomeScreen(uiState = HomeUiState(greeting = "Hello, Shashi!")) }
     }
 
+    composeRule.onNodeWithTag("screen_home").assertIsDisplayed()
     composeRule
       .onNodeWithTag("greeting_text")
       .assertIsDisplayed()
@@ -33,8 +34,9 @@ class GreetingScreenTest {
 
   @Test
   fun showsLoadingIndicatorBeforeGreetingArrives() {
-    composeRule.setContent { ExpenseTrackerTheme { GreetingScreen(uiState = GreetingUiState()) } }
+    composeRule.setContent { ExpenseTrackerTheme { HomeScreen(uiState = HomeUiState()) } }
 
+    composeRule.onNodeWithTag("screen_home").assertIsDisplayed()
     composeRule.onNodeWithTag("greeting_loading").assertIsDisplayed()
   }
 }

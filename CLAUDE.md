@@ -16,7 +16,7 @@ Run all commands from the repo root using the Gradle wrapper:
 ./gradlew assembleDebug test                      # build the debug APK and run all JVM tests in every module
 ./gradlew :domain:test                            # pure JVM tests for :domain
 ./gradlew :app:testDebugUnitTest                  # :app JVM tests (incl. Robolectric Compose tests)
-./gradlew :app:testDebugUnitTest --tests "com.shashi.expensetracker.greeting.GreetingViewModelTest"   # one class
+./gradlew :app:testDebugUnitTest --tests "com.shashi.expensetracker.navigation.AppShellTest"     # one class
 ./gradlew :domain:test --tests "com.shashi.expensetracker.domain.greeting.GetGreetingUseCaseTest"     # one class
 ./gradlew :app:lintDebug                          # Android lint
 ./gradlew :domain:dependencies --configuration runtimeClasspath   # confirm :domain has no Android deps
@@ -41,14 +41,34 @@ Dependencies point inward only (AD-1):
 
 Hilt wires every dependency (AD-16) via KSP. Inside each module, code is grouped by feature package.
 
-The current code is a tracer: `greeting` goes from `GetGreetingUseCase` (`:domain`) through `StubGreetingGateway` (`:data`, bound by `GreetingModule`) to `GreetingViewModel` and `GreetingScreen` (`:app`). Story 1.5 replaces it with the Home screen.
+The greeting tracer still runs from `GetGreetingUseCase` (`:domain`) through `StubGreetingGateway` (`:data`, bound by `GreetingModule`). In `:app`, `HomeViewModel` and `HomeScreen` now show it.
+
+### App shell and navigation (`:app`)
+
+- `MainActivity` is the navigation host only. It calls `enableEdgeToEdge()`, then draws `ExpenseTrackerTheme { AppNavHost() }`.
+- `navigation/Destinations.kt` holds every route string. The `TopLevelDestination` enum lists the five tabs in order (Home, Expenses, Inbox, Budgets, Settings), each with a route, label, icon (`res/drawable/ic_nav_*.xml`) and nav testTag. `MainGraph` is the nested graph's route.
+- `navigation/AppNavHost.kt`: a root `NavHost` holding the nested `MainGraph` of the five tabs, with Home as the start. `AppNavHost(startDestination, inboxBadgeCount)` is the sign-in gate seam: the account epic adds a sign-in graph and passes it as the start. Tabs cross-fade, and reduce motion turns the fade off.
+- `navigation/AppShell.kt`: the aurora background, plus `PillNav` (the floating glass pill) below 600dp or `AppNavRail` at 600dp and wider. The nav shows only while a `MainGraph` destination is on screen.
+  - It owns tab navigation: `popUpTo(home) { saveState = true }`, `launchSingleTop` and `restoreState`. Back from any other tab returns to Home, and Back on Home goes to the system.
+  - It passes each screen a `contentPadding`: `safeDrawing` insets, widened to clear the pill or the rail.
+- `navigation/components/`: `NavBadge`, the Inbox badge (hidden at 0, read as "N new"), and the shared nav item style. The active item's gradient ends at #DB2777 so its white label passes AA, and sizes snap when reduce motion is on.
+- Screen packages: `home`, `expense`, `inbox`, `budget`, `settings`. Each has `<Tab>Screen`, `<Tab>ViewModel` and `<Tab>UiState`. Every tab except Home is a placeholder that shows only its title. AD-2 allows `home` as an `:app`-only package that composes other features.
+- Screens never see the `NavController`. Each gets a `contentPadding` and, later, action lambdas. `<Tab>Route` collects the ViewModel (`hiltViewModel()`) and calls the stateless `<Tab>Screen`.
+
+**To add a tab screen** (or fill in a placeholder):
+1. Add or replace `<Tab>Screen`, `<Tab>ViewModel` and `<Tab>UiState` in the feature package. The screen applies `contentPadding` and tags its root `screen_<tab>`.
+2. For a new top-level tab, add an entry to `TopLevelDestination` (route, `R.string` label, `ic_nav_*` vector, `nav_<tab>` tag) and a `composable(route)` in `AppNavHost`'s `mainGraph`.
+3. For a screen outside the tabs (such as sign-in), add its own graph next to `MainGraph` in `AppNavHost`. The nav hides there automatically.
+4. Cover it in `navigation/AppShellTest`.
+
+Tags kept by the shell: `nav_home`, `nav_expenses`, `nav_inbox`, `nav_budgets`, `nav_settings`, `nav_inbox_badge`, `pill_nav`, `nav_rail`, `screen_home` … `screen_settings`, `greeting_text`, `greeting_loading`. FABs, snackbars and real screen content come per screen in later epics.
 
 ## Conventions
 
 - Use cases are `VerbNounUseCase` classes with one public `operator fun invoke`. They return a sealed result (success or a named failure) and never throw to callers.
 - Outside systems are behind `*Gateway` interfaces, stored data behind `*Repository` interfaces, both defined in `:domain` and implemented in `:data`.
 - Each screen has one ViewModel exposing one immutable `<Screen>UiState` as a `StateFlow`. ViewModels depend only on `:domain` use cases and turn failures into `UiState` messages.
-- Interactive and key UI elements use `testTag` (for example `greeting_text`). Keep existing tags and add tags to new user-critical actions.
+- Interactive and key UI elements use `testTag` (for example `nav_home`, `screen_home`, `greeting_text`). Keep existing tags and add tags to new user-critical actions.
 - No `.kt` file may exceed 500 lines (AD-17). `checkKotlinFileLength` in the root `build.gradle.kts` enforces it as part of `check`.
 - Dependencies and plugins go through `gradle/libs.versions.toml` aliases. Don't hard-code versions in module build files. The catalog already holds the Stack libraries later epics need.
 - Source lives in `src/main/kotlin` and `src/test/kotlin`.

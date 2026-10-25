@@ -1,5 +1,6 @@
 package com.shashi.expensetracker
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -16,11 +17,12 @@ class MainActivityTest {
   @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
 
   @Test
-  fun launchShowsGreetingFromStubGateway() {
+  fun launchShowsHomeWithGreetingFromStubGateway() {
     composeRule.waitUntil(timeoutMillis = 5_000) {
       composeRule.onAllNodes(hasTestTag("greeting_text")).fetchSemanticsNodes().isNotEmpty()
     }
 
+    composeRule.onNodeWithTag("screen_home").assertIsDisplayed()
     composeRule.onNodeWithTag("greeting_text").assertTextEquals("Hello, Expense Tracker!")
   }
 }

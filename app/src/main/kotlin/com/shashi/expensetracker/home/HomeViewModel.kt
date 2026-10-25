@@ -1,4 +1,4 @@
-package com.shashi.expensetracker.greeting
+package com.shashi.expensetracker.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,20 +12,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class GreetingViewModel @Inject constructor(private val getGreeting: GetGreetingUseCase) :
-  ViewModel() {
+class HomeViewModel @Inject constructor(private val getGreeting: GetGreetingUseCase) : ViewModel() {
 
-  private val _uiState = MutableStateFlow(GreetingUiState())
-  val uiState: StateFlow<GreetingUiState> = _uiState.asStateFlow()
+  private val _uiState = MutableStateFlow(HomeUiState())
+  val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
   init {
     viewModelScope.launch {
-      val message =
+      val greeting =
         when (val result = getGreeting()) {
           is GreetingResult.Success -> result.greeting
-          GreetingResult.NameUnavailable -> GreetingUiState.FALLBACK_MESSAGE
+          GreetingResult.NameUnavailable -> HomeUiState.FALLBACK_GREETING
         }
-      _uiState.value = GreetingUiState(message = message)
+      _uiState.value = HomeUiState(greeting = greeting)
     }
   }
 }

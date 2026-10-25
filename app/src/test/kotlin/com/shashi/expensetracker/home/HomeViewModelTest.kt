@@ -1,4 +1,4 @@
-package com.shashi.expensetracker.greeting
+package com.shashi.expensetracker.home
 
 import com.shashi.expensetracker.domain.greeting.GetGreetingUseCase
 import com.shashi.expensetracker.domain.greeting.GreetingGateway
@@ -13,7 +13,7 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class GreetingViewModelTest {
+class HomeViewModelTest {
 
   private class FakeGreetingGateway(private val fetch: () -> String) : GreetingGateway {
     override suspend fun fetchName(): String = fetch()
@@ -31,18 +31,15 @@ class GreetingViewModelTest {
 
   @Test
   fun `shows greeting when gateway returns a name`() {
-    val viewModel = GreetingViewModel(GetGreetingUseCase(FakeGreetingGateway { "Shashi" }))
+    val viewModel = HomeViewModel(GetGreetingUseCase(FakeGreetingGateway { "Shashi" }))
 
-    assertEquals(GreetingUiState(message = "Hello, Shashi!"), viewModel.uiState.value)
+    assertEquals(HomeUiState(greeting = "Hello, Shashi!"), viewModel.uiState.value)
   }
 
   @Test
-  fun `shows fallback message when gateway fails`() {
-    val viewModel = GreetingViewModel(GetGreetingUseCase(FakeGreetingGateway { error("offline") }))
+  fun `shows fallback greeting when gateway fails`() {
+    val viewModel = HomeViewModel(GetGreetingUseCase(FakeGreetingGateway { error("offline") }))
 
-    assertEquals(
-      GreetingUiState(message = GreetingUiState.FALLBACK_MESSAGE),
-      viewModel.uiState.value,
-    )
+    assertEquals(HomeUiState(greeting = HomeUiState.FALLBACK_GREETING), viewModel.uiState.value)
   }
 }

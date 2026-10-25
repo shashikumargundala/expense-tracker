@@ -27,3 +27,9 @@
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-jelly-pop-theme-from-design-md-plan.md`
   summary: When sheets arrive, pass `scrimColor = MaterialTheme.colorScheme.scrim` so the token's alpha (45% light, 65% dark) applies.
   evidence: M3's `BottomSheetDefaults.ScrimColor` is `colorScheme.scrim.copy(alpha = 0.32f)`, which replaces the token's alpha.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-five-tab-shell-with-pill-nav-and-rail-plan.md`
+  summary: Fix the Inbox nav badge's dark-mode contrast. DESIGN.md's badge token (exceeded with on-gradient text) gives white on #FB7185, about 2.5:1, below AA's 4.5:1 for its 11sp text.
+  evidence: `NavBadge.kt` draws `onError` on `error`, exactly as DESIGN.md line 218 says. A fix needs a DESIGN.md decision (for example dark ink text on the dark exceeded red), alongside the dark-mode `onPrimary` decision deferred from story 1.4.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-five-tab-shell-with-pill-nav-and-rail-plan.md`
+  summary: Check on a device that the active pill label ("Expenses", "Settings") isn't cut off on 360dp and narrower phones, or at 1.75x font. Unverified; medium if true.
+  evidence: The arithmetic leaves about 53dp for a 12sp/650 label at 360dp and about 34dp at 320dp, with `maxLines = 1` and ellipsis. Robolectric's text metrics can't measure it. A device check at 320dp and 360dp, at font scale 1.0 and 1.75, settles it.
