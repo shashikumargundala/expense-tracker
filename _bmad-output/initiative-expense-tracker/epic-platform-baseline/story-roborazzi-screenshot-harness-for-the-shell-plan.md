@@ -81,7 +81,7 @@ context: []
 - The dark variant uses the method-level qualifier `+night`, which Robolectric appends to the class-level `w360dp-h800dp`. The font variant is `@Config(fontScale = 1.75f)` on top of the class qualifiers.
 - Changing `Primary` (Verification step 3) failed only `ThemeTokensTest`, because `Primary` isn't painted anywhere in the shell. The visual check used `GradientStart` (the active pill/rail item) instead. `verifyRoborazziDebug` then failed `ShellScreenshotTest` and wrote `shell_home_{light,font175,wide}_compare.png` to `app/build/outputs/roborazzi/` (dark uses `GradientStartDark`, so it correctly passed). After reverting, verify passes.
 - Plain `testDebugUnitTest` with the baselines folder deleted passes and writes nothing, so a missing baseline doesn't break plain test runs.
-- Baselines were recorded on macOS. Linux CI result: see the PR checks (Design Notes describe the fallback).
+- Baselines were recorded on macOS. PR #7 CI (ubuntu-latest) passed `build verifyRoborazziDebug` with them, so no Linux re-record was needed.
 - Observed in `shell_home_font175.png`: at 1.75x font, the active pill label truncates to "Ho…". This is existing app behavior, captured as it ships (no visual changes were in scope).
 
 ## Plan Change Log
