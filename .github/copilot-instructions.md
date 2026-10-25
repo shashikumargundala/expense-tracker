@@ -24,7 +24,8 @@ Run all commands from the repo root using the Gradle wrapper:
 
 - **Debug signing:** debug builds use AGP's default debug keystore (`~/.android/debug.keystore`, created on the first debug build). No keystore lives in the repo.
 - **Secrets:** there is no Secrets Gradle plugin and no `.env`. Nothing secret is committed.
-- Release signing and R8 are not configured yet (story 1.2).
+- **Release builds:** R8 minification and resource shrinking are on. Signing reads `KEYSTORE_PATH` (absolute, or relative to the repo root), `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` from the environment. If any is missing, `assembleRelease` produces an unsigned APK and logs a warning; it never falls back to the debug key. Keep rules for Moshi and Retrofit models are in `app/proguard-rules.pro`.
+- **Manifest:** `allowBackup=false` and `data_extraction_rules.xml` exclude everything from cloud backup and device transfer (the Sheet is the backup). `GET_ACCOUNTS` is declared with `tools:node="remove"` so no dependency can add it.
 
 ## Architecture
 

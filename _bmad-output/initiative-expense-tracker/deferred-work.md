@@ -15,3 +15,6 @@
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-three-module-skeleton-launches-on-the-new-toolchain-plan.md`
   summary: Fix `.github/copilot-instructions.md` line 9, which tells readers to keep the file in sync with itself; it should point to `CLAUDE.md`.
   evidence: The line was copied verbatim from CLAUDE.md ("`.github/copilot-instructions.md` holds the same guidance").
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-manifest-signing-and-r8-release-config-plan.md`
+  summary: Show the "Release builds will be unsigned" warning only when a release build is requested, or reword CLAUDE.md and the Copilot instructions to say it prints whenever Gradle configures the build.
+  evidence: `logger.warn` in `app/build.gradle.kts` runs during configuration, so every `assembleDebug` and `test` without signing variables prints it. A configuration-cache hit hides it even on `assembleRelease`.

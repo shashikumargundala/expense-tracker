@@ -81,7 +81,7 @@ Each layer is tested on its own with fakes, plus one Robolectric test that launc
 
 ## Block 8: What was deleted
 
-All of `app/src/main/java/com/example/**`, the old tests and screenshot, the backup-rule template XMLs, `.env.example`, `firebase-applet-config.json`, `metadata.json` and the Secrets plugin. The old code stays at commit `26e51ad`. Kept on purpose: the launcher mipmaps, [finance_app_logo_1779726000241.png](../../../app/src/main/res/drawable/finance_app_logo_1779726000241.png) (used by the launcher foreground), [proguard-rules.pro](../../../app/proguard-rules.pro) and [gradle.properties](../../../gradle.properties).
+All of `app/src/main/java/com/example/**`, the old tests and screenshot, the backup-rule template XMLs, `.env.example`, `firebase-applet-config.json`, `metadata.json` and the Secrets plugin. The old code stays at commit `26e51ad`. Kept on purpose: the launcher mipmaps, [finance_app_logo_1779726000241.jpg](../../../app/src/main/res/drawable/finance_app_logo_1779726000241.jpg) (renamed from `.png` in story 1.2) (used by the launcher foreground), [proguard-rules.pro](../../../app/proguard-rules.pro) and [gradle.properties](../../../gradle.properties).
 
 ## Block 9: Periphery
 
