@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Expense Tracker</string>
+
+    <!-- Top-level tabs (EXPERIENCE.md Information Architecture), in tab order. -->
+    <string name="tab_home">Home</string>
+    <string name="tab_expenses">Expenses</string>
+    <string name="tab_inbox">Inbox</string>
+    <string name="tab_budgets">Budgets</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- TalkBack label of the Inbox nav badge ("3 new"). -->
+    <plurals name="nav_badge_new">
+        <item quantity="one">%1$d new</item>
+        <item quantity="other">%1$d new</item>
+    </plurals>
 </resources>

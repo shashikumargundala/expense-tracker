@@ -39,6 +39,7 @@ flowchart LR
 - **Binds:** all
 - **Prevents:** features reaching into each other's internals, which would block a later split into `:feature:*` modules.
 - **Rule:** each module has one package per feature: `account`, `expense`, `category`, `budget`, `inbox`, `sync`, `analytics`, `settings`. Code in one feature may use another feature only through that feature's public `:domain` interfaces and models.
+- **Note (2026-10-25, user decision in story 1.5):** `:app` may have a `home` screen package that composes other features.
 
 ### AD-3: Room is the local mirror the UI reads; every change goes through an outbox [ADOPTED]
 - **Binds:** FR-3 to FR-9, FR-16 to FR-23, NFR-4, NFR-6
