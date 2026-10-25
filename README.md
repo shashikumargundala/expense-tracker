@@ -13,6 +13,8 @@ An offline-first Android expense tracker that syncs with your own Google Sheet. 
 2. Build and test: `./gradlew assembleDebug test`. The first build downloads Gradle 9.6.0, the dependencies, Android SDK platform 37 and, if needed, JDK 21, so it can take a while.
 3. Install on a connected device or emulator: `./gradlew :app:installDebug`
 
+Release builds (`./gradlew assembleRelease`) are minified with R8. To sign one, set `KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`; without them the APK is left unsigned.
+
 Debug builds are signed with your default Android debug key (`~/.android/debug.keystore`). No `.env` file or keystore in the repo is needed.
 
 See `CLAUDE.md` for the conventions, and the architecture spine in `_bmad-output/initiative-expense-tracker/architecture-expense-tracker/` for the design decisions.

@@ -18,11 +18,32 @@ android {
   }
 
   // Debug builds use AGP's default debug signing (~/.android/debug.keystore).
-  // Release signing and R8 are configured in story 1.2.
+  // Release builds are signed from the environment. Without all four variables the release
+  // stays unsigned, so builds without secrets (CI, local) still work. Never falls back to debug.
+  val releaseSigningEnv =
+    listOf("KEYSTORE_PATH", "KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").associateWith {
+      providers.environmentVariable(it).orNull
+    }
+  val missingSigningEnv = releaseSigningEnv.filterValues { it.isNullOrBlank() }.keys
+  val releaseSigning =
+    if (missingSigningEnv.isEmpty()) {
+      signingConfigs.create("release") {
+        storeFile = rootProject.file(releaseSigningEnv.getValue("KEYSTORE_PATH")!!)
+        storePassword = releaseSigningEnv.getValue("KEYSTORE_PASSWORD")
+        keyAlias = releaseSigningEnv.getValue("KEY_ALIAS")
+        keyPassword = releaseSigningEnv.getValue("KEY_PASSWORD")
+      }
+    } else {
+      logger.warn("Release builds will be unsigned: missing ${missingSigningEnv.joinToString()}.")
+      null
+    }
+
   buildTypes {
     release {
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      signingConfig = releaseSigning
     }
   }
   compileOptions {
