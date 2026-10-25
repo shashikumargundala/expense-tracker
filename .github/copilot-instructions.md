@@ -21,10 +21,14 @@ Run all commands from the repo root using the Gradle wrapper:
 ./gradlew :app:lintDebug                          # Android lint
 ./gradlew :domain:dependencies --configuration runtimeClasspath   # confirm :domain has no Android deps
 ./gradlew checkKotlinFileLength                   # fail on any .kt file over 500 lines (AD-17)
-./gradlew build                                   # what CI runs: assemble, unit tests, lint, the 500-line check
+./gradlew recordRoborazziDebug                    # re-record screenshot baselines into app/src/test/screenshots/
+./gradlew verifyRoborazziDebug                    # compare screenshots against the committed baselines
+./gradlew compareRoborazziDebug                   # write _compare diff images without failing
+./gradlew build verifyRoborazziDebug              # what CI runs: assemble, unit tests, lint, the 500-line check, screenshots
 ```
 
-- **CI:** `.github/workflows/ci.yml` runs `./gradlew build` on JDK 21 for every push and PR. It needs no secrets; release builds stay unsigned there.
+- **CI:** `.github/workflows/ci.yml` runs `./gradlew build verifyRoborazziDebug` on JDK 21 for every push and PR. It needs no secrets; release builds stay unsigned there. On failure it uploads reports, test results and Roborazzi diffs (`**/build/outputs/roborazzi/`).
+- **Screenshots:** Roborazzi (Robolectric native graphics) baselines are committed in `app/src/test/screenshots/` as `<screen>_<variant>.png`; today only the shell on Home (`screenshot/ShellScreenshotTest`: light, dark, 1.75x font, 600dp rail). Plain `test` only renders them. A failed verify writes `<name>_compare.png` to `app/build/outputs/roborazzi/`. Variants come only from Robolectric `@Config` (qualifiers, `+night`, `fontScale`), never test-only app code. To add a screen, follow the KDoc on `captureScreen` in `screenshot/Screenshots.kt`, then record on a passing build and check each PNG by eye. Baselines must match Linux CI rendering; if CI fails only on text anti-aliasing, re-record on Linux CI rather than raising the threshold.
 
 - **Debug signing:** debug builds use AGP's default debug keystore (`~/.android/debug.keystore`, created on the first debug build). No keystore lives in the repo.
 - **Secrets:** there is no Secrets Gradle plugin and no `.env`. Nothing secret is committed.

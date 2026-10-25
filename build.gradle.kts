@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.kotlin.compose) apply false
   alias(libs.plugins.ksp) apply false
   alias(libs.plugins.hilt) apply false
+  alias(libs.plugins.roborazzi) apply false
 }
 
 // AD-17: no .kt file in any module may exceed 500 lines. Wired into `check`, which CI runs.

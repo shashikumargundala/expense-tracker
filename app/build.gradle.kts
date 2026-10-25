@@ -3,6 +3,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.ksp)
   alias(libs.plugins.hilt)
+  alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -78,10 +79,16 @@ dependencies {
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.robolectric)
+  testImplementation(libs.roborazzi)
+  testImplementation(libs.roborazzi.compose)
+  testImplementation(libs.roborazzi.junit.rule)
 
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
 }
+
+// Screenshot baselines are committed here. Record: recordRoborazziDebug. Verify: verifyRoborazziDebug.
+roborazzi { outputDir.set(file("src/test/screenshots")) }
 
 // Robolectric's SDK 36 sandbox needs Java 21 and access to JDK FileDescriptor internals;
 // only the test JVM uses this.
@@ -91,4 +98,6 @@ tasks.withType<Test>().configureEach {
     "--add-opens=java.base/java.io=ALL-UNNAMED",
     "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
   )
+  // Roborazzi captures through Robolectric native graphics with hardware-accelerated PixelCopy.
+  systemProperty("robolectric.pixelCopyRenderMode", "hardware")
 }

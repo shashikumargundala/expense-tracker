@@ -27,8 +27,9 @@ jobs:
       # Caches Gradle and validates the wrapper.
       - uses: gradle/actions/setup-gradle@v6
 
-      # Assemble, unit tests, lint and the 500-line check (checkKotlinFileLength). Release stays unsigned.
-      - run: ./gradlew build --console=plain
+      # Assemble, unit tests, lint, the 500-line check (checkKotlinFileLength) and the Roborazzi
+      # screenshot check against app/src/test/screenshots/. Release stays unsigned.
+      - run: ./gradlew build verifyRoborazziDebug --console=plain
 
       - if: failure()
         uses: actions/upload-artifact@v7
@@ -37,4 +38,5 @@ jobs:
           path: |
             **/build/reports/
             **/build/test-results/
+            **/build/outputs/roborazzi/
           if-no-files-found: ignore
