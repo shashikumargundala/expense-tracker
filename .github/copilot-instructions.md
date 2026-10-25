@@ -20,7 +20,11 @@ Run all commands from the repo root using the Gradle wrapper:
 ./gradlew :domain:test --tests "com.shashi.expensetracker.domain.greeting.GetGreetingUseCaseTest"     # one class
 ./gradlew :app:lintDebug                          # Android lint
 ./gradlew :domain:dependencies --configuration runtimeClasspath   # confirm :domain has no Android deps
+./gradlew checkKotlinFileLength                   # fail on any .kt file over 500 lines (AD-17)
+./gradlew build                                   # what CI runs: assemble, unit tests, lint, the 500-line check
 ```
+
+- **CI:** `.github/workflows/ci.yml` runs `./gradlew build` on JDK 21 for every push and PR. It needs no secrets; release builds stay unsigned there.
 
 - **Debug signing:** debug builds use AGP's default debug keystore (`~/.android/debug.keystore`, created on the first debug build). No keystore lives in the repo.
 - **Secrets:** there is no Secrets Gradle plugin and no `.env`. Nothing secret is committed.
@@ -45,6 +49,6 @@ The current code is a tracer: `greeting` goes from `GetGreetingUseCase` (`:domai
 - Outside systems are behind `*Gateway` interfaces, stored data behind `*Repository` interfaces, both defined in `:domain` and implemented in `:data`.
 - Each screen has one ViewModel exposing one immutable `<Screen>UiState` as a `StateFlow`. ViewModels depend only on `:domain` use cases and turn failures into `UiState` messages.
 - Interactive and key UI elements use `testTag` (for example `greeting_text`). Keep existing tags and add tags to new user-critical actions.
-- No `.kt` file may exceed 500 lines (AD-17).
+- No `.kt` file may exceed 500 lines (AD-17). `checkKotlinFileLength` in the root `build.gradle.kts` enforces it as part of `check`.
 - Dependencies and plugins go through `gradle/libs.versions.toml` aliases. Don't hard-code versions in module build files. The catalog already holds the Stack libraries later epics need.
 - Source lives in `src/main/kotlin` and `src/test/kotlin`.

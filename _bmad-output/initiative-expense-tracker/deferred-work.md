@@ -18,3 +18,6 @@
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-manifest-signing-and-r8-release-config-plan.md`
   summary: Show the "Release builds will be unsigned" warning only when a release build is requested, or reword CLAUDE.md and the Copilot instructions to say it prints whenever Gradle configures the build.
   evidence: `logger.warn` in `app/build.gradle.kts` runs during configuration, so every `assembleDebug` and `test` without signing variables prints it. A configuration-cache hit hides it even on `assembleRelease`.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-ci-with-the-500-line-check-plan.md`
+  summary: Avoid duplicate CI runs on PR branches, for example by limiting `push` to `master`, which needs the user's agreement to change story 1.3's "every push" intent.
+  evidence: `.github/workflows/ci.yml` triggers on both `push` and `pull_request`. Their refs differ (`refs/heads/*` and `refs/pull/*/merge`), so the concurrency group doesn't dedupe them, and each commit runs `./gradlew build` twice.
