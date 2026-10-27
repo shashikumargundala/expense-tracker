@@ -1,0 +1,93 @@
+# Breakdown of epic-account-and-sheet. Table order is build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Google sign-in reaches Home"
+description = "Adds `AccountGateway` in the `account` package of `:domain`, with a Credential Manager Sign in with Google implementation in `:data`. Adds the Room `AppDatabase` with a `session` table (account ID, email, and a Sheet ID column left empty until entry 3), a `SessionRepository` that the later entries read, and `:data`'s test setup. The sign-in screen (minimal) becomes the gated start destination: launch opens Home when a stored session exists and Sign-in otherwise. The Web client ID is set per build type through `buildConfigField`. The owner creates the Google Cloud project, the Testing-mode consent screen with test users and the `drive.file` scope, enables the Drive and Sheets APIs, and creates the Web OAuth client and the debug Android OAuth client."
+verify = "On the owner's phone a fresh install shows only Sign-in; Continue with Google signs in and opens Home; relaunching opens Home without signing in again; a cancelled sign-in stays signed out."
+covers = ["CAP-1"]
+after = ["1.5"]
+hitl = true
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-10-sign-in-and-google-access-adopted", "architecture-expense-tracker/architecture-expense-tracker.md#ad-20-session-lifecycle-adopted"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Drive access token and Google API clients"
+description = "Adds the get-access operation to `AccountGateway`, implemented with `AuthorizationClient` and the `drive.file` scope for the signed-in account. The token is held in memory, and an OkHttp interceptor calls clearToken and retries once on HTTP 401. Adds Retrofit Drive v3 and Sheets v4 services with Moshi models, plus MockWebServer for tests, all in `:data`. When consent is needed it returns a `NeedsUserConsent` failure carrying an opaque request the app can launch, with no Google type in `:domain`. No access token, email or Authorization header is ever logged."
+verify = "MockWebServer tests show the token is attached, a 401 triggers clearToken and exactly one retry, consent-needed maps to NeedsUserConsent, and no log line contains the token."
+covers = ["CAP-2"]
+after = [1]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Find or create the Expense Sheet at sign-in"
+description = "Delivers CAP-2's find, create and recreate part; restoring data on a new phone stays with epics 3 and 4. Implements `ExpenseSheetGateway` find-or-create in `:data`. Find is a Drive files.list on appProperties `expenseTracker=v1` with trashed=false, where the oldest match wins. Create writes AD-7's five tabs and headers and the five default Categories, and sets the marker last, so a half-built file is never found. Adds the fake `ExpenseSheetGateway` in `:domain` test fixtures for epic 3 to reuse. Sign-in runs a new `EnsureExpenseSheetUseCase`, launching the consent prompt in the foreground when it gets `NeedsUserConsent`, and writes the session's Sheet ID before Home opens. From here on, the gate opens Home only for a session that has a Sheet ID."
+verify = "First sign-in, after granting consent, creates exactly one tagged Sheet with the five tabs, their headers and the default Categories in the owner's Drive; after clearing app data, signing in reuses it; after deleting the Sheet and clearing app data, the next sign-in creates a fresh one."
+covers = ["CAP-2"]
+after = [2]
+hitl = false
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-7-the-expense-sheet-layout-and-row-parsing-are-a-contract-adopted", "architecture-expense-tracker/architecture-expense-tracker.md#ad-11-google-code-sits-behind-domain-gateways-adopted"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Missing-Sheet recovery and offline cold start"
+description = "Adds a `SheetMissing` failure from `ExpenseSheetGateway` (404 or trashed), which `EnsureExpenseSheetUseCase` answers with find-or-create, storing the new Sheet ID. This is the hook epic 3's sync calls, per AD-20's 'next sync'. Confirms the stored session opens Home with no network."
+verify = "Tests with the fake gateway show SheetMissing leads to one find-or-create and a new stored Sheet ID; in airplane mode a signed-in app cold-starts to Home."
+covers = ["CAP-1", "CAP-2"]
+after = [3]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Sign-in screen per the design"
+description = "Builds the sign-in screen from DESIGN.md and EXPERIENCE.md: aurora, rings brand mark, title, the official Google-branded Continue with Google button and the privacy line. Adds the 'Setting up your Expense Sheet…' progress state announced to TalkBack, a silent cancel, and the inline error 'Couldn't sign in. Check your connection and try again.'"
+verify = "Compose tests cover the idle, progress, cancel and error states through signin_continue_google and signin_progress, and Roborazzi baselines cover light, dark, and 1.75x font at 320dp."
+covers = ["CAP-1"]
+after = [3]
+hitl = false
+risk = "medium"
+references = ["ux-expense-tracker/DESIGN.md#components", "ux-expense-tracker/mockups/key-signin.html"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Settings Google account tile"
+description = "Adds the Google account section in Settings from `SessionRepository`: avatar initial, email and 'Signed in with Google', and the Expense Sheet row. Open my Sheet opens the Sheet by its stored ID in the Sheets app or the browser. EXPERIENCE.md marks the target app as an assumption, so the builder confirms it with the user. The sync status pills and sign-out stay with epic-expenses-and-sync."
+verify = "Settings shows the signed-in email, Open my Sheet (settings_open_sheet) launches the Sheet URL, and a Roborazzi baseline covers the tile."
+covers = ["CAP-1"]
+after = [3]
+hitl = false
+risk = "low"
+references = ["ux-expense-tracker/mockups/key-settings.html"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "Sign-in on the signed release APK"
+description = "The owner registers the release Android OAuth client with story 1.9's release key SHA-1. Adds any R8 keep rules the Moshi and Retrofit models need, and checks the epic's features on a release APK built with scripts/build-release-apk.sh: sign-in, Sheet discovery, offline cold start and the Settings tile."
+verify = "A release APK from scripts/build-release-apk.sh signs in on the owner's phone, finds the existing Sheet without creating a second one, cold-starts offline to Home and shows the Settings tile."
+covers = ["CAP-1", "CAP-2"]
+after = [4, 5, 6, "1.9"]
+hitl = true
+risk = "medium"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Refactor sweep"
+description = "Cleans up what this epic's plans and deferred review findings name; scope is set when it starts."
+verify = "CI is green and every deferred finding from this epic is resolved or recorded."
+covers = []
+after = [1, 2, 3, 4, 5, 6, 7]
+hitl = false
+risk = "low"
