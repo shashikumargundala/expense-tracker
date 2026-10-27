@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shashi.expensetracker.MainActivity
 import com.shashi.expensetracker.ui.theme.ExpenseTrackerTheme
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.HiltTestApplication
 import kotlin.math.abs
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -46,13 +49,15 @@ private val screenTags =
 
 /**
  * The five-tab shell through the real activity and Hilt graph: launch, tab switch, Back, and the
- * pill nav or rail by width.
+ * pill nav or rail by width. FakeAccountModule gives a signed-in session, so launch opens Home.
  */
+@HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
-@Config(qualifiers = "w360dp-h800dp")
+@Config(application = HiltTestApplication::class, qualifiers = "w360dp-h800dp")
 class AppShellTest {
 
-  @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
+  @get:Rule(order = 0) val hiltRule = HiltAndroidRule(this)
+  @get:Rule(order = 1) val composeRule = createAndroidComposeRule<MainActivity>()
 
   @Test
   fun coldStartSelectsHomeAndShowsGreeting() {

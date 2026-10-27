@@ -79,6 +79,8 @@ dependencies {
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.robolectric)
+  testImplementation(libs.hilt.android.testing)
+  kspTest(libs.hilt.compiler)
   testImplementation(libs.roborazzi)
   testImplementation(libs.roborazzi.compose)
   testImplementation(libs.roborazzi.junit.rule)

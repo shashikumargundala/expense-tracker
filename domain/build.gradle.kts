@@ -12,7 +12,8 @@ kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
 
 dependencies {
   implementation(libs.javax.inject)
-  implementation(libs.kotlinx.coroutines.core)
+  // api: domain signatures expose Flow.
+  api(libs.kotlinx.coroutines.core)
 
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)

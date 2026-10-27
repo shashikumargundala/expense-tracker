@@ -18,8 +18,10 @@ const val SCREENSHOT_DIR = "src/test/screenshots"
  * To add screenshots for a later screen:
  * 1. Add `<Screen>ScreenshotTest` in this package, annotated `@RunWith(AndroidJUnit4::class)`,
  *    `@GraphicsMode(GraphicsMode.Mode.NATIVE)` and `@Config(qualifiers = "w360dp-h800dp")`.
- * 2. Launch the real `MainActivity` with `createAndroidComposeRule<MainActivity>()`, navigate to
- *    the screen and wait for its `screen_*` tag.
+ * 2. Make it a `@HiltAndroidTest` with `application = HiltTestApplication::class` in its `@Config`
+ *    and a `HiltAndroidRule` at rule order 0. Launch the real `MainActivity` with
+ *    `createAndroidComposeRule<MainActivity>()` at order 1 (`FakeAccountModule` gives a signed-in
+ *    session, so it opens Home), navigate to the screen and wait for its `screen_*` tag.
  * 3. Get variants only from `@Config`: `+night` for dark, `fontScale = 1.75f` for large text and
  *    `w600dp-h900dp` for the rail. Never add test-only code to the app.
  * 4. Call `composeRule.captureScreen("<screen>_<variant>")`, run `./gradlew recordRoborazziDebug`
