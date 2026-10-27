@@ -61,3 +61,5 @@ The platform baseline (scaffold, toolchain, CI, release path, theme and shell). 
 - Decision: `READ_SMS` is declared in epic-sms-inbox together with the Play SMS declaration, not here (user's decision, 2026-10-24).
 - Decision: Refactor sweep closes the epic as entry 8 (2026-10-24).
 - Unknown: the owner's Google Play developer account must be registered and verified before entry 7.
+- Decision: no Play release for now; signed release APKs are shared directly (story 9) until story 7 can run (user's decision, 2026-10-27).
+- Reminder: story 7 (Play closed track) must still be implemented once the owner's Play developer account is verified. Its Play App Signing enrolment reuses story 9's release key.

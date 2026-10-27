@@ -80,6 +80,7 @@ after = [2, 5]
 hitl = true
 risk = "medium"
 unknown = "Is the owner's Google Play developer account registered and verified?"
+notes = ["Decision (2026-10-27): 1.7 is still to be implemented once the owner's Google Play developer account is verified (review in progress as of 2026-10-27). Until then, story 9 (signed release APK) is the interim distribution. When enrolling in Play App Signing, use story 9's existing release key, so sideloaded installs can update from Play and epic 2 needs only one release SHA-1."]
 
 [[entry]]
 id = 8
@@ -91,3 +92,14 @@ covers = []
 after = [1, 2, 3, 4, 5, 6, 7]
 hitl = false
 risk = "low"
+
+[[entry]]
+id = 9
+type = "story"
+title = "Signed release APK for sharing"
+description = "Creates the owner's release keystore with keytool, outside git and with backup steps, and builds the signed, R8-minified release APK through the existing KEYSTORE_* environment variables. It checks the APK installs and launches on the owner's Galaxy S23, which also closes 1.2's pending release device check, and records the release key's SHA-1 in this epic's Notes for epic-account-and-sheet's release OAuth client. It documents how to build and share the APK. The owner chooses and stores the keystore passwords and does the backup."
+verify = "A signed release APK installs and launches on the owner's phone showing the shell; the release SHA-1 is recorded; no keystore file is in git."
+covers = []
+after = [2]
+hitl = true
+risk = "medium"
