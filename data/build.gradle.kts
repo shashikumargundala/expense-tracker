@@ -47,6 +47,16 @@ dependencies {
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services.auth)
   implementation(libs.googleid)
+  implementation(libs.play.services.auth)
+  implementation(libs.kotlinx.coroutines.play.services)
+
+  // Drive v3 and Sheets v4 over REST (data/google). No logging interceptor: tokens never reach logs.
+  implementation(libs.retrofit)
+  implementation(libs.retrofit.converter.moshi)
+  implementation(platform(libs.okhttp.bom))
+  implementation(libs.okhttp)
+  implementation(libs.moshi)
+  ksp(libs.moshi.kotlin.codegen)
 
   testImplementation(libs.junit)
   testImplementation(libs.robolectric)
@@ -54,6 +64,8 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.androidx.room.testing)
+  testImplementation(platform(libs.okhttp.bom))
+  testImplementation(libs.okhttp.mockwebserver3)
 }
 
 // Robolectric's SDK 36 sandbox needs Java 21; only the test JVM uses this (as in :app).

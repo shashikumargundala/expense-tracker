@@ -19,5 +19,9 @@ class FakeSessionRepository(initial: Session? = null) : SessionRepository {
 }
 
 class FakeAccountGateway(private val signIn: () -> SignInResult) : AccountGateway {
+  var access: AccessResult = AccessResult.Granted
+
   override suspend fun signIn(): SignInResult = signIn.invoke()
+
+  override suspend fun getAccess(): AccessResult = access
 }
