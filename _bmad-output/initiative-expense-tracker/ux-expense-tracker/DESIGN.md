@@ -3,7 +3,7 @@ name: Expense Tracker
 description: Private, offline-first expense tracker for Android. Orbit Rings structure (frosted glass, aurora glow, progress rings) in the Jelly Pop palette. Playful and premium, built on Material 3 Compose.
 status: final
 created: 2026-10-08
-updated: 2026-10-08
+updated: 2026-10-25
 sources:
   - .memlog.md
   - mockups/direction-orbit-rings.html
@@ -26,6 +26,8 @@ colors:
   gradient-start: '#6D28D9'
   gradient-end: '#EC4899'
   on-gradient: '#FFFFFF'
+  on-primary: '#FFFFFF'
+  on-exceeded: '#FFFFFF'
   indicator: '#EDE4FF'
   ring-track: '#F2ECF5'
   warning: '#B45309'
@@ -65,6 +67,8 @@ colors:
   gradient-start-dark: '#7C3AED'
   gradient-end-dark: '#DB2777'
   on-gradient-dark: '#FFFFFF'
+  on-primary-dark: '#171021'
+  on-exceeded-dark: '#171021'
   indicator-dark: '#3B2A5C'
   ring-track-dark: '#33264A'
   warning-dark: '#FBBF24'
@@ -213,9 +217,9 @@ components:
     blur: 20dp
     rounded: '{rounded.full}'
     item-height: 48dp
-    active-item: 'gradient {colors.gradient-start} to {colors.gradient-end}, {colors.on-gradient} icon and label'
+    active-item: 'gradient {colors.gradient-start} to {colors.gradient-end}, {colors.on-gradient} icon and label (icon only above 1.3x font or when the label doesn''t fit)'
     inactive-item: '{colors.on-surface-variant} icon only'
-    badge: '{colors.exceeded} with {colors.on-gradient} text'
+    badge: '{colors.exceeded} with {colors.on-exceeded} text'
   fab:
     size: 56dp
     shape: circle
@@ -306,11 +310,13 @@ Hex values are copied exactly from `mockups/direction-jelly-pop.html`. The auror
 - **Edge (`{colors.edge}` #EADCF0 / #0E0915)**: used only as the shadow tint and as the base of the dark-mode scrim.
 - **Primary (`{colors.primary}` #6D28D9 / #C4B5FD)**: grape. Text links, the required-field prompt, the Cancel action, the selected-icon color on the indicator. Maps to M3 `primary`.
 - **Gradient (`{colors.gradient-start}` → `{colors.gradient-end}`; #6D28D9 → #EC4899 light, #7C3AED → #DB2777 dark)**: the brand signature. Used only for the FAB, the active nav item, the selected period segment and filter chip, primary buttons, the Inbox Add button, the avatar, and the hero inner Budget ring. Never used for body surfaces or text.
-- **On gradient (`{colors.on-gradient}` #FFFFFF)**: icons and labels on the gradient. Maps to M3 `onPrimary`.
+- **On gradient (`{colors.on-gradient}` #FFFFFF in both modes)**: icons and labels on the gradient, such as the active nav item in the pill and the rail. An M3 extension (`ExtendedColors.onGradient`), because white fails on dark `{colors.primary}`.
+- **On primary (`{colors.on-primary}` #FFFFFF / #171021)**: content on a flat `{colors.primary}` fill, such as M3 filled buttons, switches and checkboxes. Maps to M3 `onPrimary` (and the derived `onSecondary` and `onTertiary`). Dark mode uses the canvas color, about 10:1 on #C4B5FD.
 - **Indicator (`{colors.indicator}` #EDE4FF / #3B2A5C)**: soft grape pill behind a selected or highlighted value. Maps to M3 `secondaryContainer`. Also the first aurora layer.
 - **Ring track (`{colors.ring-track}` #F2ECF5 / #33264A)**: the unfilled part of every ring, neutral chips, disabled buttons, and the close button background. Maps to M3 `surfaceContainerHighest`.
 - **Warning (`{colors.warning}` #B45309 / #FBBF24, container #FFEDC7 / #3D2C0A)**: a Category at 80% or more of its Budget. Amber ring, amber glow, amber chip. An M3 extension.
 - **Exceeded (`{colors.exceeded}` #E11D48 / #FB7185, container #FFF1F3 / #33141F)**: a Category at 100% or more of its Budget, the second red lap, the over amount, destructive actions (Delete) and the nav badge. Maps to M3 `error` and `errorContainer`.
+- **On exceeded (`{colors.on-exceeded}` #FFFFFF / #171021)**: text on an `{colors.exceeded}` fill, such as the nav badge count. Maps to M3 `onError`. Dark mode uses the canvas color, about 6.9:1 on #FB7185.
 - **Pending Sync (`{colors.pending-sync}` #B45309 / #FBBF24, container #FFF1D6 / #3D2C0A)**: the header sync pill and the "Waiting to sync" row marker. It shares the amber hue with warning, but the pill and chip carry text and an icon, so they never rely on color alone.
 - **Inbox (`{colors.inbox}` #4F46E5 / #6366F1, container #EEF2FF / #1F2148)**: the bank orb on Inbox Items. Indigo sets bank SMS apart from Categories.
 - **Category colors**: Food #F59E0B, Transport #10B981, Shopping #E11D48, Bills #3B82F6, Fun #A855F7 in light; #FBBF24, #34D399, #FB7185, #60A5FA, #C084FC in dark. Each has a `-tint` for its icon orb background. The Category editor offers eight swatches: the five Category colors plus `{colors.gradient-start}`, `{colors.gradient-end}` and `{colors.inbox}` (`mockups/key-budgets.html`).
@@ -347,7 +353,7 @@ Layout is a single column on phones. From top to bottom, each tab has a header (
 - The hero chart stacks above its legend.
 - In a row, the amount wraps onto its own line under the name, and the chevron hides.
 - Rings shrink and their strokes thin in proportion.
-- The nav shows only the active item's label, and the FAB shrinks but keeps a 48dp touch target.
+- The nav's active item shows its icon only when its label doesn't fit (see Pill nav), and the FAB shrinks but keeps a 48dp touch target.
 
 **Larger screens** (foldables and tablets, 600dp and wider): a navigation rail replaces the pill nav, and content is laid out in two columns within a readable maximum width.
 
@@ -383,7 +389,7 @@ Specs below are visual only. Behavior lives in EXPERIENCE.md Component Patterns.
 - **Category row** (`{components.category-row}`): ring, then name with a status chip under it, then an amount block on the right ("₹900 left of ₹6,000" with "₹5,100 spent"), then a chevron. A warning row gets the amber outline and glow and a chip like "85% · slow down". An exceeded row gets the red outline and glow, a chip reading "Exceeded", and the amount in `{colors.exceeded}` ("₹450 over of ₹4,000").
 - **Status chip** (`{components.status-chip}`): a small pill. The neutral chip shows a percentage ("22%"), the warning chip is amber and the exceeded chip is red. It always carries words or numbers, never color alone.
 - **Sync pill** (`{components.sync-pill}`): an amber pill in the header with a sync icon and a count ("1 waiting to sync"). The row-level version is a smaller chip reading "Waiting to sync".
-- **Pill nav** (`{components.pill-nav}`): floats above the gesture bar with side margins. Five items. The active item widens to about twice the others, fills with the gradient, and shows icon plus label. Inactive items show the icon only. The Inbox nav item carries a red count badge. At 600dp and wider, a navigation rail replaces it, with the same five items, gradient active item and badge.
+- **Pill nav** (`{components.pill-nav}`): floats above the gesture bar with side margins. Five items. The active item widens to about twice the others, fills with the gradient, and shows icon plus label. Inactive items show the icon only. The active item, in the pill and the rail, drops its label and shows the icon only when the font scale is above 1.3, or when the measured label doesn't fit the item's width (so the label never shows ellipsized). It keeps the gradient fill, and TalkBack still reads the label. The Inbox nav item carries a red count badge. At 600dp and wider, a navigation rail replaces it, with the same five items, gradient active item and badge.
 - **FAB** (`{components.fab}`): a round, gradient-filled button with a plus icon, a glass halo and a pink glow. It sits above the nav at the bottom right, on Home and Expenses only.
 - **Period filter** (`{components.period-filter}`): a glass pill holding three segments: "This month", "Previous months" (with a dropdown icon) and "Custom range" (with a calendar icon). The selected segment fills with the gradient and shows the chosen range ("5 Oct – 20 Oct").
 - **Search field**: a glass pill with a search icon and the placeholder "Search expenses".
@@ -425,3 +431,7 @@ Specs below are visual only. Behavior lives in EXPERIENCE.md Component Patterns.
 | Use every token's `-dark` twin in dark mode | Invert colors or reuse light glass (#FFFFFFB8) on the dark canvas |
 | Keep the aurora as background decoration | Let the aurora carry meaning or sit over text without a glass layer |
 | Let rows reflow (amount under name) at large font scales | Truncate amounts or Category names |
+
+## Changelog
+
+- 2026-10-25 (user's decision, story 1.8): added `{colors.on-primary}` and `{colors.on-exceeded}` (#FFFFFF light, #171021 dark) so dark `onPrimary` and the dark nav badge text meet AA. `{colors.on-gradient}` stays #FFFFFF in both modes and no longer maps to `onPrimary`. The active nav item shows its icon only above 1.3x font or when its label doesn't fit. Light mode is unchanged.

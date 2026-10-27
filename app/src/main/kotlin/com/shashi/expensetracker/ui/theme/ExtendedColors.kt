@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.Color
 data class ExtendedColors(
   val gradientStart: Color,
   val gradientEnd: Color,
+  /** Content drawn on the gradient (active nav item); white in both modes. */
+  val onGradient: Color,
   val glass: Color,
   val glassEdge: Color,
   val navGlass: Color,
@@ -39,6 +41,7 @@ val LightExtendedColors =
   ExtendedColors(
     gradientStart = GradientStart,
     gradientEnd = GradientEnd,
+    onGradient = OnGradient,
     glass = Glass,
     glassEdge = GlassEdge,
     navGlass = NavGlass,
@@ -69,6 +72,7 @@ val DarkExtendedColors =
   ExtendedColors(
     gradientStart = GradientStartDark,
     gradientEnd = GradientEndDark,
+    onGradient = OnGradientDark,
     glass = GlassDark,
     glassEdge = GlassEdgeDark,
     navGlass = NavGlassDark,

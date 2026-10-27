@@ -44,12 +44,21 @@ import com.shashi.expensetracker.navigation.components.NavItemHeight
 import com.shashi.expensetracker.navigation.components.navActiveBrush
 import com.shashi.expensetracker.navigation.components.navItemDescription
 import com.shashi.expensetracker.navigation.components.navSizeAnimationSpec
+import com.shashi.expensetracker.navigation.components.showActiveNavLabel
 import com.shashi.expensetracker.ui.theme.ExpenseTrackerTheme
 import com.shashi.expensetracker.ui.theme.PillShape
 import com.shashi.expensetracker.ui.theme.glassSurface
 
 /** Glass between the pill's edge and its items. */
 private val PillNavPadding = 4.dp
+
+/** Horizontal padding inside an item, around its icon and label. */
+private val PillNavItemPadding = 12.dp
+
+private val PillNavIconSize = 24.dp
+
+/** Gap between the active item's icon and its label. */
+private val PillNavLabelGap = 6.dp
 
 /** Total height of the pill nav: one item row plus its padding. */
 val PillNavHeight: Dp = NavItemHeight + PillNavPadding * 2
@@ -58,7 +67,8 @@ val PillNavHeight: Dp = NavItemHeight + PillNavPadding * 2
  * The floating glass pill nav for compact widths (DESIGN.md components.pill-nav).
  *
  * The [selected] item is about twice the width of the others, filled with the gradient, and shows
- * icon plus label; the others show only an icon with a TalkBack label. Every item is at least 48dp
+ * icon plus label; the others show only an icon with a TalkBack label. The active item drops its
+ * label too above 1.3x font or when the label doesn't fit ([showActiveNavLabel]). Every item is at least 48dp
  * in both directions. [inboxBadgeCount] drives the Inbox badge, hidden at 0.
  */
 @Composable
@@ -111,7 +121,12 @@ private fun PillNavItem(
   val label = stringResource(destination.label)
   val description = navItemDescription(label, badgeCount)
   val contentColor =
-    if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    if (selected) ExpenseTrackerTheme.extendedColors.onGradient
+    else MaterialTheme.colorScheme.onSurfaceVariant
+  // Measured against the target width, so the label doesn't flicker while the item animates.
+  val showLabel =
+    selected &&
+      showActiveNavLabel(label, width - PillNavItemPadding * 2 - PillNavIconSize - PillNavLabelGap)
   val interactionSource = remember { MutableInteractionSource() }
   // The outer box is the touch target and semantics node; the inner box draws the clipped pill and
   // ripple, so the badge can sit on top without being clipped.
@@ -137,18 +152,21 @@ private fun PillNavItem(
           .then(if (selected) Modifier.background(navActiveBrush()) else Modifier)
           .indication(interactionSource, ripple())
     )
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp)) {
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      modifier = Modifier.padding(horizontal = PillNavItemPadding),
+    ) {
       Box {
         Icon(
           painter = painterResource(destination.icon),
           contentDescription = null,
           tint = contentColor,
-          modifier = Modifier.size(24.dp),
+          modifier = Modifier.size(PillNavIconSize),
         )
         NavBadge(count = badgeCount, modifier = Modifier.align(Alignment.TopEnd).offset(x = 8.dp, y = (-6).dp))
       }
-      if (selected) {
-        Spacer(Modifier.width(6.dp))
+      if (showLabel) {
+        Spacer(Modifier.width(PillNavLabelGap))
         Text(
           text = label,
           color = contentColor,

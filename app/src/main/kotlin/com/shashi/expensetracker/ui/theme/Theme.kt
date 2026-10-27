@@ -11,14 +11,15 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
 // Mapped per DESIGN.md Colors: background/surface = surface-canvas, surfaceContainer =
-// surface-container, onSurface, onSurfaceVariant, outlineVariant, primary, onPrimary = on-gradient,
+// surface-container, onSurface, onSurfaceVariant, outlineVariant, primary, onPrimary = on-primary,
 // secondaryContainer = indicator, surfaceContainerHighest = ring-track, error = exceeded,
-// errorContainer = exceeded-container.
+// onError = on-exceeded, errorContainer = exceeded-container. on-gradient has no M3 role; it is
+// ExtendedColors.onGradient.
 //
 // Derived (no DESIGN.md role): onBackground = on-surface; primaryContainer = indicator;
-// onPrimaryContainer, onSecondaryContainer = on-surface; onError = on-gradient;
+// onPrimaryContainer, onSecondaryContainer = on-surface;
 // surfaceContainerLowest/Low/High = surface-container; outline = on-surface-variant;
-// secondary, tertiary = primary; onSecondary, onTertiary = on-gradient; tertiaryContainer =
+// secondary, tertiary = primary; onSecondary, onTertiary = on-primary; tertiaryContainer =
 // indicator; onTertiaryContainer = on-surface; onErrorContainer = on-surface (exceeded on
 // exceeded-container is ~4.3:1, below AA); surfaceVariant =
 // ring-track; surfaceTint = primary; surfaceBright = surface-container; surfaceDim = surface-canvas;
@@ -33,7 +34,8 @@ private fun jellyPopScheme(
   outlineVariant: Color,
   primary: Color,
   inversePrimary: Color,
-  onGradient: Color,
+  onPrimary: Color,
+  onExceeded: Color,
   indicator: Color,
   ringTrack: Color,
   exceeded: Color,
@@ -42,16 +44,16 @@ private fun jellyPopScheme(
 ): ColorScheme =
   base.copy(
     primary = primary,
-    onPrimary = onGradient,
+    onPrimary = onPrimary,
     primaryContainer = indicator,
     onPrimaryContainer = onSurface,
     inversePrimary = inversePrimary,
     secondary = primary,
-    onSecondary = onGradient,
+    onSecondary = onPrimary,
     secondaryContainer = indicator,
     onSecondaryContainer = onSurface,
     tertiary = primary,
-    onTertiary = onGradient,
+    onTertiary = onPrimary,
     tertiaryContainer = indicator,
     onTertiaryContainer = onSurface,
     background = canvas,
@@ -64,7 +66,7 @@ private fun jellyPopScheme(
     inverseSurface = onSurface,
     inverseOnSurface = canvas,
     error = exceeded,
-    onError = onGradient,
+    onError = onExceeded,
     errorContainer = exceededContainer,
     onErrorContainer = onSurface,
     outline = onSurfaceVariant,
@@ -89,7 +91,8 @@ val LightColorScheme =
     outlineVariant = OutlineVariant,
     primary = Primary,
     inversePrimary = PrimaryDark,
-    onGradient = OnGradient,
+    onPrimary = OnPrimary,
+    onExceeded = OnExceeded,
     indicator = Indicator,
     ringTrack = RingTrack,
     exceeded = Exceeded,
@@ -107,7 +110,8 @@ val DarkColorScheme =
     outlineVariant = OutlineVariantDark,
     primary = PrimaryDark,
     inversePrimary = Primary,
-    onGradient = OnGradientDark,
+    onPrimary = OnPrimaryDark,
+    onExceeded = OnExceededDark,
     indicator = IndicatorDark,
     ringTrack = RingTrackDark,
     exceeded = ExceededDark,
