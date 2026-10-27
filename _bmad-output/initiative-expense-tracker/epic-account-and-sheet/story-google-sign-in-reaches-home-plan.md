@@ -121,6 +121,13 @@ context:
 - **Real-app test (review fix):** `ExpenseTrackerAppTest` reads the tracker from the real app's injected `activityCallbacks` set. A Hilt EntryPoint declared in test sources isn't part of the component generated for the main `ExpenseTrackerApp`, so it can't be used there.
 - **R8:** `credentials-play-services-auth` ships its own consumer keep rule, so no rule was added to `app/proguard-rules.pro`. `./gradlew build` minified the release without errors.
 
+- **Device check passed** on the owner's Galaxy S23 (Android 16), with real Google Cloud credentials (2026-10-28):
+  - Sign-in with the owner's account stored one session row: account ID from `sub`, email, Sheet ID empty until 2.3.
+  - A force-stopped relaunch opens Home in 0.66 s.
+  - After clearing app data, cancelling the picker stays on Sign-in with no message, and signing in again lands on Home (owner confirmed).
+  - No crashes.
+  - The owner put the Web client ID in `gradle.properties`.
+
 ## Plan Change Log
 
 ## Review Triage Log
