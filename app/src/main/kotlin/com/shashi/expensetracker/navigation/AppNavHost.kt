@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.shashi.expensetracker.account.SignInRoute
 import com.shashi.expensetracker.budget.BudgetsRoute
 import com.shashi.expensetracker.expense.ExpensesRoute
 import com.shashi.expensetracker.home.HomeRoute
@@ -29,9 +30,10 @@ private const val TAB_FADE_MILLIS = 200
 /**
  * The root navigation host inside [AppShell].
  *
- * The root graph holds the nested [MainGraph] with the five tabs, Home first. This is the sign-in
- * gate seam: the account epic adds a sign-in graph next to [MainGraph] and passes it as
- * [startDestination]. [inboxBadgeCount] feeds the Inbox nav badge (hidden at 0).
+ * The root graph holds the nested [SignInGraph] and [MainGraph] (the five tabs, Home first).
+ * [startDestination] is the sign-in gate: `MainActivity` passes [MainGraph] when a session is
+ * stored and [SignInGraph] otherwise. After sign-in, Home opens and Sign-in leaves the back stack.
+ * [inboxBadgeCount] feeds the Inbox nav badge (hidden at 0).
  */
 @Composable
 fun AppNavHost(
@@ -57,7 +59,27 @@ fun AppNavHost(
       },
       exitTransition = { if (reduceMotion) ExitTransition.None else fadeOut(tween(TAB_FADE_MILLIS)) },
     ) {
+      signInGraph(padding, navController)
       mainGraph(padding)
+    }
+  }
+}
+
+private fun NavGraphBuilder.signInGraph(
+  padding: State<PaddingValues>,
+  navController: NavHostController,
+) {
+  navigation(startDestination = SignInDestination, route = SignInGraph) {
+    composable(SignInDestination) {
+      SignInRoute(
+        contentPadding = padding.value,
+        onSignedIn = {
+          navController.navigate(MainGraph) {
+            popUpTo(SignInGraph) { inclusive = true }
+            launchSingleTop = true
+          }
+        },
+      )
     }
   }
 }

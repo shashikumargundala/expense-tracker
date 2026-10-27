@@ -4,11 +4,17 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.shashi.expensetracker.R
 
-/**
- * Route of the nested graph that holds the five tabs. The account epic adds a sign-in graph next to
- * it and passes the start destination to [AppNavHost].
- */
+/** Route of the nested graph that holds the five tabs. */
 const val MainGraph = "main"
+
+/**
+ * Route of the nested sign-in graph next to [MainGraph]. Launch starts here when no session is
+ * stored; the nav is hidden here.
+ */
+const val SignInGraph = "signin_graph"
+
+/** The Sign-in screen inside [SignInGraph]. */
+const val SignInDestination = "signin"
 
 /**
  * The five tabs, in tab order (EXPERIENCE.md Information Architecture). Home is the start tab.

@@ -13,4 +13,9 @@
         <item quantity="one">%1$d new</item>
         <item quantity="other">%1$d new</item>
     </plurals>
+
+    <!-- Sign-in (minimal until story 2.5 designs it). -->
+    <string name="signin_continue_google">Continue with Google</string>
+    <string name="signin_error_generic">Couldn\'t sign in. Check your connection and try again.</string>
+    <string name="signin_error_not_configured">Sign-in isn\'t set up in this build.</string>
 </resources>
