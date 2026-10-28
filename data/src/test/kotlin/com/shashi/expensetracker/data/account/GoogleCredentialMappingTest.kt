@@ -9,8 +9,11 @@ import androidx.credentials.exceptions.GetCredentialUnknownException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.shashi.expensetracker.domain.account.Session
+import com.shashi.expensetracker.domain.account.SessionRepository
 import com.shashi.expensetracker.domain.account.SignInFailure
 import com.shashi.expensetracker.domain.account.SignInResult
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -105,16 +108,33 @@ class GoogleCredentialMappingTest {
     }
   }
 
+  /** Drive access isn't used by sign-in, so the dependency never authorizes. */
+  private val unusedDriveAuthorization =
+    DriveAuthorization(
+      sessions =
+        object : SessionRepository {
+          override fun observe() = flowOf<Session?>(null)
+
+          override suspend fun save(session: Session) = false
+        },
+      authorizer =
+        object : DriveAuthorization.Authorizer {
+          override suspend fun authorize(email: String) = error("unused")
+
+          override suspend fun clearToken(token: String) = error("unused")
+        },
+    )
+
   @Test
   fun blankWebClientIdFailsAsNotConfiguredWithoutTouchingCredentialManager() = runTest {
-    val gateway = CredentialManagerAccountGateway(ResumedActivityTracker(), webClientId = " ")
+    val gateway = CredentialManagerAccountGateway(ResumedActivityTracker(), webClientId = " ", unusedDriveAuthorization)
 
     assertEquals(SignInResult.Failure(SignInFailure.NotConfigured), gateway.signIn())
   }
 
   @Test
   fun noResumedActivityFailsAsNoActivity() = runTest {
-    val gateway = CredentialManagerAccountGateway(ResumedActivityTracker(), webClientId = "web.apps.googleusercontent.com")
+    val gateway = CredentialManagerAccountGateway(ResumedActivityTracker(), webClientId = "web.apps.googleusercontent.com", unusedDriveAuthorization)
 
     assertEquals(SignInResult.Failure(SignInFailure.NoActivity), gateway.signIn())
   }

@@ -1,0 +1,30 @@
+{
+  "spreadsheetId": "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789",
+  "properties": {
+    "title": "Expense Tracker",
+    "locale": "en_US",
+    "autoRecalc": "ON_CHANGE",
+    "timeZone": "Asia/Kolkata"
+  },
+  "sheets": [
+    {
+      "properties": {
+        "sheetId": 0,
+        "title": "Expenses",
+        "index": 0,
+        "sheetType": "GRID",
+        "gridProperties": { "rowCount": 1000, "columnCount": 26 }
+      }
+    },
+    {
+      "properties": {
+        "sheetId": 1849264512,
+        "title": "Categories",
+        "index": 1,
+        "sheetType": "GRID",
+        "gridProperties": { "rowCount": 1000, "columnCount": 26 }
+      }
+    }
+  ],
+  "spreadsheetUrl": "https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/edit"
+}

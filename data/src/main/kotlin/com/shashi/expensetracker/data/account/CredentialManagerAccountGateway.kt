@@ -5,6 +5,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.shashi.expensetracker.domain.account.AccessResult
 import com.shashi.expensetracker.domain.account.AccountGateway
 import com.shashi.expensetracker.domain.account.SignInFailure
 import com.shashi.expensetracker.domain.account.SignInResult
@@ -13,15 +14,18 @@ import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Sign in with Google through Credential Manager (AD-10), with the Web client ID as the server
- * client ID. Shows the picker on the activity [ResumedActivityTracker] holds. Never logs an email
- * or a token.
+ * client ID. Shows the picker on the activity [ResumedActivityTracker] holds. Drive access is
+ * delegated to [DriveAuthorization]. Never logs an email or a token.
  */
 class CredentialManagerAccountGateway
 @Inject
 constructor(
   private val activityTracker: ResumedActivityTracker,
   @param:GoogleWebClientId private val webClientId: String,
+  private val driveAuthorization: DriveAuthorization,
 ) : AccountGateway {
+
+  override suspend fun getAccess(): AccessResult = driveAuthorization.getAccess()
 
   override suspend fun signIn(): SignInResult {
     if (webClientId.isBlank()) return failure(SignInFailure.NotConfigured)

@@ -56,3 +56,6 @@ Plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-refa
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-refactor-sweep-plan.md`
   summary: Reword the Screenshots note in `CLAUDE.md` and `.github/copilot-instructions.md`, which says "today only the shell on Home" although `shell_expenses_w320` exists.
   evidence: `ShellScreenshotTest` now covers Home in four variants plus Expenses at 320dp. Its KDoc is correct; only the two agent-context files are stale.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-account-and-sheet/story-drive-access-token-and-google-api-clients-plan.md`
+  summary: Fix the wording in CLAUDE.md and `.github/copilot-instructions.md` that lists `AccessFailure.Unauthorized` as a `getAccess()` outcome; it only arises from API calls (`ApiFailure.Access`) after the single retry.
+  evidence: `DriveAuthorization` returns only NotSignedIn, Unavailable, a token or NeedsUserConsent. The domain KDoc was corrected in 2.2's review; the agent-context files were left for an approved edit.
