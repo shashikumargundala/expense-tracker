@@ -7,7 +7,7 @@ This is the first Play release: the app on the **closed testing** track, signed 
 - `docs/PRIVACY.md` is live: enable **GitHub Pages** (repo Settings → Pages → Branch `master`, folder `/docs`). Check that `https://shashikumargundala.github.io/expense-tracker/PRIVACY` opens.
 - Google Cloud (see `docs/GOOGLE_CLOUD_SETUP.md`):
   - The **release Android OAuth client** exists, with SHA-1 `FB:80:94:AD:5B:E5:AF:26:C4:9D:EF:17:5F:73:61:6C:10:78:FB:25`.
-  - The consent screen is **published to In production**.
+  - The consent screen stays in **Testing**, with every tester's Google account (and a reviewer account) added under Audience → Test users. Publishing needs a domain you own (`docs/GOOGLE_CLOUD_SETUP.md` step 9).
 
 ## 1. Create the upload key (once)
 
@@ -50,7 +50,7 @@ Under **Protected with Play → Play Store distribution → Go to Play app signi
 - **Privacy policy:** `https://shashikumargundala.github.io/expense-tracker/PRIVACY`
 - **App access:**
   - "All or some functionality is restricted."
-  - Instructions: "Tap Continue with Google on the first screen and sign in with any Google account. The app then opens its home screen."
+  - Instructions: "Tap Continue with Google on the first screen and sign in with the test account below. The app then opens its home screen." Add the login of a throwaway Google account that is also a test user in Google Cloud. Use an account with no personal data and no 2-step prompts that a reviewer can't pass.
 - **Ads:** No.
 - **Content rating:** fill in the questionnaire. Category Utility/Productivity, no objectionable content.
 - **Target audience:** 18 and over.

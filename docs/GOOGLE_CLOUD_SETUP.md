@@ -25,8 +25,8 @@ Sign-in itself doesn't call them. Stories 2.2 and 2.3 do, and enabling them now 
 2. **App information:** app name `Expense Tracker`, and your email as the user support email. Click **Next**.
 3. **Audience:** choose **External**. Click **Next**.
 4. **Contact information:** your email. Click **Next**, agree to the policy, and click **Create**.
-5. Go to **Audience** and check that the publishing status is **Testing**. It stays there while you develop; step 9 publishes it to production for the Play release.
-6. Under **Test users**, click **Add users** and add every Google account that will sign in, including your own. While the status is Testing, only these accounts can sign in while the app is in Testing. After step 9, any Google account can sign in.
+5. Go to **Audience** and check that the publishing status is **Testing**. It stays there, including for the Play closed track (see step 9).
+6. Under **Test users**, click **Add users** and add every Google account that will sign in, including your own. Only these accounts can sign in while the status is Testing.
 7. Go to **Data access** and click **Add or remove scopes**. Find `.../auth/drive.file` (*See, edit, create and delete only the specific Google Drive files you use with this app*), tick it, click **Update**, then **Save**. Add no other Drive or Sheets scope.
 
 ## 4. Create the Web OAuth client
@@ -93,11 +93,12 @@ Play-installed and shared APK builds are signed with the release key, so they ne
 4. **SHA-1 certificate fingerprint:** `FB:80:94:AD:5B:E5:AF:26:C4:9D:EF:17:5F:73:61:6C:10:78:FB:25`, the release key from story 1.9, which Play App Signing reuses.
 5. Click **Create**. There's nothing to copy.
 
-## 9. Publish the consent screen to production
+## 9. Publishing to production (not done yet)
 
-**Google Auth Platform → Audience → Publish app**, then confirm.
+For now the consent screen stays in **Testing** (decision 2026-10-29). Google refuses to publish without an app home page and privacy policy on an **authorized domain**, and `github.io` is rejected ("must be a top private domain"). Publishing needs a domain you own: point it at GitHub Pages (`docs/CNAME`), verify it in Search Console, add it under Authorized domains and on the Branding page, then **Audience → Publish app**.
 
-- The app only asks for `drive.file`, a non-sensitive scope, so Google doesn't require verification and nothing costs money.
-- After publishing, **any** Google account can sign in, including Play's reviewers and testers you haven't listed.
-- The test-user list no longer limits sign-in.
+While in Testing:
 
+- Add every closed-track tester's Google account under **Audience → Test users** (up to 100), and a throwaway reviewer account for Play (see `docs/PLAY_RELEASE.md`, App access).
+- Google expires grants for Testing apps after about 7 days, so testers may need to sign in again weekly.
+- Publish before any production release.
