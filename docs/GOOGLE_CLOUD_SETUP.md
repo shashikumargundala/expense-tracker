@@ -2,7 +2,7 @@
 
 The app signs in with Google through Credential Manager. That needs one Google Cloud project with a consent screen, the Drive and Sheets APIs, a Web OAuth client and an Android OAuth client for each signing key. Client IDs aren't secrets. No client secret is ever downloaded into the app or committed.
 
-You do this once. The release Android client comes in story 2.7.
+You do this once. Steps 8 and 9, the release client and publishing, were added for the Play release (story 1.7).
 
 ## 1. Create the project
 
@@ -19,14 +19,14 @@ You do this once. The release Android client comes in story 2.7.
 
 Sign-in itself doesn't call them. Stories 2.2 and 2.3 do, and enabling them now keeps the setup in one place.
 
-## 3. Configure the consent screen (Testing mode)
+## 3. Configure the consent screen (starts in Testing mode)
 
 1. Go to **APIs & Services > OAuth consent screen** (in newer consoles: **Google Auth Platform > Branding**). If asked, click **Get started**.
 2. **App information:** app name `Expense Tracker`, and your email as the user support email. Click **Next**.
 3. **Audience:** choose **External**. Click **Next**.
 4. **Contact information:** your email. Click **Next**, agree to the policy, and click **Create**.
-5. Go to **Audience** and check that the publishing status is **Testing**. Leave it there.
-6. Under **Test users**, click **Add users** and add every Google account that will sign in, including your own. Only these accounts can sign in while the app is in Testing.
+5. Go to **Audience** and check that the publishing status is **Testing**. It stays there while you develop; step 9 publishes it to production for the Play release.
+6. Under **Test users**, click **Add users** and add every Google account that will sign in, including your own. While the status is Testing, only these accounts can sign in while the app is in Testing. After step 9, any Google account can sign in.
 7. Go to **Data access** and click **Add or remove scopes**. Find `.../auth/drive.file` (*See, edit, create and delete only the specific Google Drive files you use with this app*), tick it, click **Update**, then **Save**. Add no other Drive or Sheets scope.
 
 ## 4. Create the Web OAuth client
@@ -81,4 +81,23 @@ With the value blank (as in CI), the app still builds and runs. Tapping Continue
 4. Close the app fully and open it again. Home opens directly, offline too.
 5. To try cancelling, clear the app's data, open it, tap **Continue with Google** and dismiss the picker. You stay on Sign-in with no message.
 
-If sign-in fails with "Couldn't sign in", check that the account is a test user, that `googleWebClientId` is the Web client's ID, and that the debug client's package name and SHA-1 match the build.
+If sign-in fails with "Couldn't sign in", check that the account is a test user (while the consent screen is still in Testing), that `googleWebClientId` is the Web client's ID, and that the debug client's package name and SHA-1 match the build.
+
+## 8. Create the release Android OAuth client
+
+Play-installed and shared APK builds are signed with the release key, so they need their own Android client.
+
+1. In **Credentials**, click **Create credentials > OAuth client ID** (or **Google Auth Platform → Clients → Create client**).
+2. **Application type:** **Android**. **Name:** `Expense Tracker Android release`.
+3. **Package name:** `com.shashi.expensetracker`
+4. **SHA-1 certificate fingerprint:** `FB:80:94:AD:5B:E5:AF:26:C4:9D:EF:17:5F:73:61:6C:10:78:FB:25`, the release key from story 1.9, which Play App Signing reuses.
+5. Click **Create**. There's nothing to copy.
+
+## 9. Publish the consent screen to production
+
+**Google Auth Platform → Audience → Publish app**, then confirm.
+
+- The app only asks for `drive.file`, a non-sensitive scope, so Google doesn't require verification and nothing costs money.
+- After publishing, **any** Google account can sign in, including Play's reviewers and testers you haven't listed.
+- The test-user list no longer limits sign-in.
+

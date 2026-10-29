@@ -59,3 +59,6 @@ Plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-refa
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-account-and-sheet/story-drive-access-token-and-google-api-clients-plan.md`
   summary: Fix the wording in CLAUDE.md and `.github/copilot-instructions.md` that lists `AccessFailure.Unauthorized` as a `getAccess()` outcome; it only arises from API calls (`ApiFailure.Access`) after the single retry.
   evidence: `DriveAuthorization` returns only NotSignedIn, Unavailable, a token or NeedsUserConsent. The domain KDoc was corrected in 2.2's review; the agent-context files were left for an approved edit.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-first-release-on-the-play-closed-track-plan.md`
+  summary: Update the "Web client ID" and "Sharing an APK" bullets in CLAUDE.md and `.github/copilot-instructions.md`. `GOOGLE_CLOUD_SETUP.md` now adds a release Android client and publishing to production, and "until the Play release (story 1.7)" is now ambiguous.
+  evidence: Story 1.7 added steps 8 and 9 to the Cloud setup and the Play release flow; the agent-context bullets still describe the Testing-only setup.
