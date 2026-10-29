@@ -58,6 +58,8 @@ The release key's SHA-1 goes in the release Google OAuth client, which epic-acco
 
 `scripts/build-release-apk.sh` prints the same SHA-1 in lowercase without colons (`fb8094ad…fb25`), which is how `apksigner` writes it. Google Cloud accepts either form.
 
-## Later: Google Play (story 1.7)
+## Google Play (story 1.7)
 
-Story 1.7 still has to be built once the Play developer account is verified. When enrolling in Play App Signing, choose to **use this existing key**, not a Google-generated one. That way, people who installed the shared APK can update from Play, and Google sign-in needs only this one release SHA-1.
+The Play release follows `docs/PLAY_RELEASE.md`. Play App Signing **uses this existing key** (exported with PEPK), not a Google-generated one. That way, people who installed a shared APK can update from Play, and Google sign-in needs only this one release SHA-1. Play uploads are signed with a separate upload key, `~/.android-keys/expense-tracker-upload.jks`, through `scripts/build-release-bundle.sh`.
+
+Play Console's app signing key SHA-1 was checked on 2026-10-29 and matches the release key: `FB:80:94:AD:5B:E5:AF:26:C4:9D:EF:17:5F:73:61:6C:10:78:FB:25`.
