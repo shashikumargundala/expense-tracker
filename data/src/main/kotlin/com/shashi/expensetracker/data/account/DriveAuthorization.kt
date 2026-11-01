@@ -51,6 +51,18 @@ internal constructor(
   }
 
   private val mutex = Mutex()
+
+  /**
+   * The account that just signed in, before its session is stored (the session is saved only once
+   * the Sheet ID is known). It wins over the stored session's email. Memory only.
+   */
+  @Volatile private var signedInEmail: String? = null
+
+  /** Targets Drive authorization at [email] for the sign-in that is in progress. */
+  fun useAccount(email: String) {
+    signedInEmail = email
+  }
+
   private var cachedToken: String? = null
   private var cachedEmail: String? = null
 
@@ -63,7 +75,7 @@ internal constructor(
   override suspend fun fetchToken(): TokenResult =
     mutex.withLock {
       val email =
-        sessions.observe().first()?.email?.takeIf { it.isNotBlank() }
+        (signedInEmail ?: sessions.observe().first()?.email)?.takeIf { it.isNotBlank() }
           ?: return@withLock denied(AccessFailure.NotSignedIn)
       cachedToken?.let { if (cachedEmail == email) return@withLock TokenResult.Token(it) }
       val result =
@@ -150,5 +162,5 @@ internal object DriveAuthorizationMapping {
     }
 }
 
-/** The consent prompt `AuthorizationClient` returned. Story 2.3 launches [pendingIntent]. */
+/** The consent prompt `AuthorizationClient` returned; the gateway launches [pendingIntent]. */
 class PendingIntentConsentRequest(val pendingIntent: PendingIntent) : ConsentRequest

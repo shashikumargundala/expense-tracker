@@ -1,6 +1,8 @@
 package com.shashi.expensetracker.data.account
 
+import com.shashi.expensetracker.data.google.SheetsExpenseSheetGateway
 import com.shashi.expensetracker.domain.account.AccountGateway
+import com.shashi.expensetracker.domain.account.ExpenseSheetGateway
 import com.shashi.expensetracker.domain.account.SessionRepository
 import dagger.Binds
 import dagger.Module
@@ -15,4 +17,6 @@ abstract class AccountModule {
   @Binds abstract fun bindSessionRepository(impl: RoomSessionRepository): SessionRepository
 
   @Binds abstract fun bindAccountGateway(impl: CredentialManagerAccountGateway): AccountGateway
+
+  @Binds abstract fun bindExpenseSheetGateway(impl: SheetsExpenseSheetGateway): ExpenseSheetGateway
 }

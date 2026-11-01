@@ -67,6 +67,12 @@ fun SignInScreen(
     )
     if (uiState.inProgress) {
       CircularProgressIndicator(modifier = Modifier.testTag("signin_progress"))
+      Text(
+        text = stringResource(R.string.signin_setting_up),
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.testTag("signin_progress_text"),
+      )
     } else {
       Button(
         onClick = onContinueWithGoogle,

@@ -12,4 +12,11 @@ interface AccountGateway {
    * returns [AccessFailure.Unauthorized], which only comes from API calls after their single retry.
    */
   suspend fun getAccess(): AccessResult
+
+  /**
+   * Shows the consent prompt for [request] in the foreground and waits. Returns true if the user
+   * granted access, false if they declined or no screen is in front. Never throws, except for
+   * coroutine cancellation.
+   */
+  suspend fun requestConsent(request: ConsentRequest): Boolean
 }

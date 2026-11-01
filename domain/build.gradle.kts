@@ -1,7 +1,11 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // Pure Kotlin/JVM module (AD-1): no Android, Room, Retrofit or Google dependencies.
-plugins { alias(libs.plugins.kotlin.jvm) }
+plugins {
+  alias(libs.plugins.kotlin.jvm)
+  // Shared fakes (for example FakeExpenseSheetGateway) for :domain and :app tests.
+  `java-test-fixtures`
+}
 
 java {
   sourceCompatibility = JavaVersion.VERSION_11

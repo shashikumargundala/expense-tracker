@@ -8,6 +8,12 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shashi.expensetracker.MainActivity
+import com.shashi.expensetracker.domain.account.AccessResult
+import com.shashi.expensetracker.domain.account.ConsentRequest
+import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
+import com.shashi.expensetracker.domain.account.ExpenseSheetResult
+import com.shashi.expensetracker.domain.account.FakeExpenseSheetGateway
+import com.shashi.expensetracker.domain.account.Session
 import com.shashi.expensetracker.domain.account.SignInFailure
 import com.shashi.expensetracker.domain.account.SignInResult
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -34,6 +40,7 @@ class SignInGateTest {
 
   @Inject lateinit var sessions: FakeSessionRepository
   @Inject lateinit var gateway: FakeAccountGateway
+  @Inject lateinit var sheets: FakeExpenseSheetGateway
 
   private var scenario: ActivityScenario<MainActivity>? = null
 
@@ -78,6 +85,75 @@ class SignInGateTest {
     composeRule.onNodeWithTag("screen_signin").assertDoesNotExist()
     assertEquals("1234", sessions.session.value?.accountId)
     assertEquals("shylock@example.com", sessions.session.value?.email)
+    assertEquals("test-sheet", sessions.session.value?.sheetId)
+  }
+
+  @Test
+  fun firstSignInCreatesTheSheetAndOpensHome() {
+    sheets.findResult = ExpenseSheetResult.NotFound
+    launch()
+
+    composeRule.onNodeWithTag("signin_continue_google").performClick()
+
+    composeRule.onNodeWithTag("screen_home").assertIsDisplayed()
+    assertEquals(1, sheets.createCalls)
+    assertEquals("created-sheet", sessions.session.value?.sheetId)
+  }
+
+  @Test
+  fun reSignInReusesTheExistingSheet() {
+    launch()
+
+    composeRule.onNodeWithTag("signin_continue_google").performClick()
+
+    composeRule.onNodeWithTag("screen_home").assertIsDisplayed()
+    assertEquals(0, sheets.createCalls)
+  }
+
+  @Test
+  fun consentGrantedContinuesToHome() {
+    gateway.access = AccessResult.NeedsUserConsent(object : ConsentRequest {})
+    launch()
+
+    composeRule.onNodeWithTag("signin_continue_google").performClick()
+
+    composeRule.onNodeWithTag("screen_home").assertIsDisplayed()
+    assertEquals(1, gateway.consentRequests)
+  }
+
+  @Test
+  fun consentDeclinedStaysOnSignInSilentlyAndSavesNothing() {
+    gateway.access = AccessResult.NeedsUserConsent(object : ConsentRequest {})
+    gateway.consentGranted = false
+    launch()
+
+    composeRule.onNodeWithTag("signin_continue_google").performClick()
+
+    composeRule.onNodeWithTag("screen_signin").assertIsDisplayed()
+    composeRule.onNodeWithTag("signin_error").assertDoesNotExist()
+    assertNull(sessions.session.value)
+    assertEquals(0, sheets.findCalls)
+  }
+
+  @Test
+  fun sheetFailureShowsErrorAndSavesNothing() {
+    sheets.findResult = ExpenseSheetResult.Failure(ExpenseSheetFailure.Network)
+    launch()
+
+    composeRule.onNodeWithTag("signin_continue_google").performClick()
+
+    composeRule.onNodeWithTag("signin_error").assertIsDisplayed()
+    composeRule.onNodeWithTag("screen_home").assertDoesNotExist()
+    assertNull(sessions.session.value)
+  }
+
+  @Test
+  fun storedSessionWithoutSheetIdShowsSignIn() {
+    sessions.session.value = Session("old", "old@example.com", sheetId = null)
+    launch()
+
+    composeRule.onNodeWithTag("screen_signin").assertIsDisplayed()
+    composeRule.onNodeWithTag("screen_home").assertDoesNotExist()
   }
 
   @Test

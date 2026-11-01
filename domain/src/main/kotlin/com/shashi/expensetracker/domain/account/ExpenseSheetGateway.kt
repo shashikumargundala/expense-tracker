@@ -1,0 +1,21 @@
+package com.shashi.expensetracker.domain.account
+
+/**
+ * The Expense Sheet in the user's Google Drive. Implemented in `:data`; nothing here exposes a
+ * Google type (AD-11). Neither call throws, except for coroutine cancellation.
+ */
+interface ExpenseSheetGateway {
+  /**
+   * Looks for the app's tagged, non-trashed Sheet. The oldest one wins. Returns
+   * [ExpenseSheetResult.Ready], [ExpenseSheetResult.NotFound], [ExpenseSheetResult.NeedsConsent] or
+   * [ExpenseSheetResult.Failure].
+   */
+  suspend fun find(): ExpenseSheetResult
+
+  /**
+   * Creates the Sheet with its tabs, headers and default Categories, and tags it last so a half-built
+   * file is never found. Returns [ExpenseSheetResult.Ready], [ExpenseSheetResult.NeedsConsent] or
+   * [ExpenseSheetResult.Failure]; never [ExpenseSheetResult.NotFound].
+   */
+  suspend fun create(): ExpenseSheetResult
+}

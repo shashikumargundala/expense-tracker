@@ -21,7 +21,8 @@ sealed interface StartUiState {
 }
 
 /**
- * Reads the stored session once at launch to pick the start destination (the sign-in gate). Later
+ * Reads the stored session once at launch to pick the start destination (the sign-in gate). Home opens
+ * only for a session that has an Expense Sheet ID; an older one without it shows Sign-in. Later
  * session changes don't move it; Sign-in navigates to Home itself.
  */
 @HiltViewModel
@@ -33,7 +34,7 @@ class StartViewModel @Inject constructor(observeSession: ObserveSessionUseCase) 
   init {
     viewModelScope.launch {
       val session = observeSession().first()
-      _uiState.value = if (session != null) StartUiState.SignedIn else StartUiState.SignedOut
+      _uiState.value = if (session?.sheetId != null) StartUiState.SignedIn else StartUiState.SignedOut
     }
   }
 }

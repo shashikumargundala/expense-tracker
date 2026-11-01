@@ -4,14 +4,16 @@ import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Signs in through the [AccountGateway] and, on success, stores the [Session]. Cancel and failure
- * store nothing; a failed save becomes [SignInFailure.StorageFailed]. Never throws to the caller, except for coroutine cancellation.
+ * Signs in through the [AccountGateway], then runs [EnsureExpenseSheetUseCase], which stores the
+ * [Session] once the Expense Sheet ID is known. Cancel, a declined consent prompt and failure store
+ * nothing; the declined prompt is reported as [SignInResult.Cancelled]. A failed save becomes
+ * [SignInFailure.StorageFailed]. Never throws to the caller, except for coroutine cancellation.
  */
 class SignInUseCase
 @Inject
 constructor(
   private val gateway: AccountGateway,
-  private val sessions: SessionRepository,
+  private val ensureSheet: EnsureExpenseSheetUseCase,
 ) {
   suspend operator fun invoke(): SignInResult {
     val result =
@@ -23,7 +25,14 @@ constructor(
         return SignInResult.Failure(SignInFailure.Unavailable)
       }
     if (result !is SignInResult.Success) return result
-    val saved = sessions.save(Session(accountId = result.accountId, email = result.email))
-    return if (saved) result else SignInResult.Failure(SignInFailure.StorageFailed)
+    return when (val sheet = ensureSheet(result.accountId, result.email)) {
+      is EnsureExpenseSheetResult.Ready -> result
+      EnsureExpenseSheetResult.ConsentDeclined -> SignInResult.Cancelled
+      is EnsureExpenseSheetResult.Failure ->
+        SignInResult.Failure(
+          if (sheet.reason == ExpenseSheetFailure.StorageFailed) SignInFailure.StorageFailed
+          else SignInFailure.Unavailable
+        )
+    }
   }
 }

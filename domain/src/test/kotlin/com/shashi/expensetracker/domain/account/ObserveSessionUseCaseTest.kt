@@ -33,9 +33,10 @@ class ObserveSessionUseCaseTest {
         ObserveSessionUseCase(sessions)().take(2).toList(emissions)
       }
 
-    SignInUseCase(FakeAccountGateway { SignInResult.Success("1234", "shylock@example.com") }, sessions)()
+    val gateway = FakeAccountGateway { SignInResult.Success("1234", "shylock@example.com") }
+    SignInUseCase(gateway, EnsureExpenseSheetUseCase(gateway, FakeExpenseSheetGateway(), sessions))()
     job.join()
 
-    assertEquals(listOf(null, Session("1234", "shylock@example.com")), emissions)
+    assertEquals(listOf(null, Session("1234", "shylock@example.com", "test-sheet")), emissions)
   }
 }
