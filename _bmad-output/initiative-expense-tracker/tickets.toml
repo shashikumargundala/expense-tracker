@@ -18,7 +18,7 @@ id = 3
 slug = "epic-expenses-and-sync"
 title = "Expenses work offline and the Sheet stays the truth"
 covers = ["CAP-2", "CAP-3", "CAP-4", "CAP-5", "CAP-6", "CAP-7", "CAP-17", "CAP-18", "CAP-19"]
-after = [{ epic = 2, needs = "AccountGateway and ExpenseSheetGateway implementations, the created Expense Sheet, stored session, fake ExpenseSheetGateway" }]
+after = [{ epic = 2, needs = "AccountGateway and ExpenseSheetGateway implementations, the created Expense Sheet, stored session, fake ExpenseSheetGateway" }, { epic = 1, needs = "the Play closed track set up by 1.7, for entry 14's release" }]
 
 [[epic]]
 id = 4

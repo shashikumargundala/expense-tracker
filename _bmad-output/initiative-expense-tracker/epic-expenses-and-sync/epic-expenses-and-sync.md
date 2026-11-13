@@ -43,3 +43,12 @@ Local storage, sync and the Expenses tab. Not Category or Budget management scre
 - Decision: CAP-17 is shared — this epic builds the period filter and uses it on Expenses; epic-budgets-and-home uses it on Home (2026-10-24).
 - Decision: sign-out (CAP-19) lives here because it needs the outbox and sync work (2026-10-24).
 - Waits on epic-account-and-sheet because: the sync engine needs the gateways, the created Sheet, the stored session and the fake gateway.
+- Decision: incepted into 15 stories, kept in one epic with one owner (user's decision, 2026-11-13).
+- Decision: entry 1 is the tracer bullet: an Expense added offline reaches the Sheet through a minimal form and list, which entries 7 and 8 replace with the designed versions (user's decision, 2026-11-13).
+- Decision: entry 2 (pull and atomic refresh) follows the tracer as the least certain work; pull and push are each split in two for size (2–3 and 4–5) (user's decision, 2026-11-13).
+- Decision: every Room schema change ships a migration from now on, starting with entry 1's single bump that adds all six mirror tables; no destructive fallback (user's decision, 2026-11-13).
+- Decision: entries wait on epic 2's 2.3 and 2.4 (Sheet gateway), 2.6 (Settings tile) and 2.7 (release sign-in), not on the whole epic (2026-11-13).
+- Decision: no closing end-to-end suite; the sync test matrix lives in entries 4 and 5 and entry 14 checks the journeys on the phone (user's decision, 2026-11-13).
+- Decision: entry 9's shared selection holds the Category as well as the period, so epic-budgets-and-home's Home Category rows set it to open Expenses filtered (user's decision, 2026-11-13).
+- Decision: entry 12 replaces Home's greeting tracer with the display name greeting (FR-23) (user's decision, 2026-11-13).
+- Source conflict: EXPERIENCE.md, Component Patterns, Expense row — "Rows with `synced = false` show 'Waiting to sync'" vs AD-3 "there is no `synced` column"; Pending Sync is an outbox entry for the row, and the build follows AD-3.

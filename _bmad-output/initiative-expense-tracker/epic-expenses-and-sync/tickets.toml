@@ -1,0 +1,178 @@
+# Breakdown of epic-expenses-and-sync. Table order is build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "An Expense added offline reaches the Sheet"
+description = "Tracer through every layer. Adds the `expense` and `sync` packages and an injected `Clock` binding (AD-19). Adds the `Expense` entity (UUID id per AD-5, `Long` paise per AD-6, minute `LocalDateTime`, Category by name, Source, SMS ID). Adds the whole mirror schema in one Room version bump: `expense`, `category`, `budget`, `dismissed`, `setting` and `outbox`, with a Room migration from version 1 that keeps the stored session; every later schema change also ships a migration. The outbox holds AD-3's closed set of seven entry types, each with its row key and base. `AddExpenseUseCase` writes the Expense and its outbox entry in one transaction. `ExpenseSheetGateway`, after story 2.4's `SheetMissing`, gains reading a tab and writing an Expenses row by key, and its fake follows. A minimal `SyncEngine` reads Expenses and Categories, applies only `UpsertExpense` (create, or update when the key exists) and refreshes those two tables. A `SyncCoordinator` with `RequestSyncUseCase` runs the engine on app open and exposes a basic sync state: running, plus the outbox's pending count. Entries 8 and 11 read that state, and entry 6 extends it. The Expenses tab gets a minimal FAB, form and list with a 'Waiting to sync' chip; entries 7 and 8 replace them."
+verify = "A Room migration test opens a version 1 database with a session and finds it intact; on the owner's phone, updating over the 2.x build keeps him signed in, and in airplane mode an Expense added from the Expenses tab lists with 'Waiting to sync'; after reconnecting and reopening the app, its row is in the Sheet with Source App and the chip clears; engine tests against the fake gateway cover create and update-on-existing-key."
+covers = ["CAP-3", "CAP-5"]
+after = ["2.3", "2.4"]
+hitl = false
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-3-room-is-the-local-mirror-the-ui-reads-every-change-goes-through-an-outbox-adopted", "architecture-expense-tracker/architecture-expense-tracker.md#ad-4-the-sync-engine-is-the-only-writer-to-the-expense-sheet-and-the-sheet-wins-adopted"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Pull: parse every tab and refresh the mirror atomically"
+description = "Reads all five tabs every sync and refreshes the mirror as one atomic diff that keeps still-pending outbox rows (AD-18), storing each pulled row's mapped values as the base later pushes and edits use. Applies AD-7's parsing. Columns map by header name and unknown columns are preserved. Missing tabs and headers are added. Amounts accept ₹ and separators, and dates may be serials or text. Category names are trimmed and case-folded, and unknown Categories are added. A blank Source becomes User. Invalid rows are skipped and counted, and the sync result reports that count for entries 6 and 11. This restores Expenses and Settings on a new phone."
+verify = "Engine tests against the fake gateway show hand-typed, edited, deleted and invalid rows land in the mirror per AD-7 with the invalid count reported, an Expense saved during a run survives the refresh, and a fresh install's first sync restores every tab."
+covers = ["CAP-2", "CAP-6"]
+after = [1]
+hitl = false
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-7-the-expense-sheet-layout-and-row-parsing-are-a-contract-adopted", "architecture-expense-tracker/architecture-expense-tracker.md#ad-18-mirror-refresh-is-one-atomic-diff-adopted"]
+
+[[entry]]
+id = 3
+type = "story"
+title = "Pull: repair IDs and write them back"
+description = "Applies AD-5's ID rules during a pull. Blank IDs get a UUID written back. Rows with the same ID and identical values are retry duplicates and are deleted. Rows with the same ID but different values keep the ID on the first one, and each later one gets a new ID with its SMS ID cleared. Blank Sources are written back as User. Copies the SMS ID of any vanished Expense row into Dismissed (AD-13)."
+verify = "Engine tests against the fake gateway cover blank, identical-duplicate and differing-duplicate IDs with their write-backs, and a vanished SMS-sourced row landing in Dismissed."
+covers = ["CAP-6"]
+after = [2]
+hitl = false
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-5-every-expense-has-a-uuid-identity-adopted"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Push Expense changes with the base check"
+description = "Completes AD-4 for `UpsertExpense` and `DeleteExpense`. Each entry is found by its row key in the fresh read and dropped when the row differs from its base, so the Sheet wins (CAP-7). Otherwise it's applied idempotently: a create on an existing key updates, and a delete of a missing key does nothing. Only mapped cells are touched, and an entry leaves the outbox only after the API confirms."
+verify = "The Expense rows of the spine's sync test matrix pass against the fake gateway: row unchanged, changed in Sheet, deleted in Sheet, duplicated and hand-typed, plus a retried write that doesn't double a row."
+covers = ["CAP-3", "CAP-7"]
+after = [3]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Push Category, Budget, Dismissal and Setting changes"
+description = "Adds the `:domain` write API that epics 4 and 5 call, with each method writing the mirror and its outbox entry in one transaction: `CategoryRepository` (upsert, delete with reassignTo), `BudgetRepository` (upsert), `DismissalRepository` (add) and `SettingRepository` (upsert). Applies their pushes with the base check. `DeleteCategory(name, reassignTo)` rewrites every matching Expense row without the base check, deletes that Category's Budgets rows, then deletes the Category row (AD-9). `AddDismissal` does nothing if the fingerprint is already there. No screens are built here."
+verify = "The remaining rows of the sync test matrix pass against the fake gateway for UpsertCategory, DeleteCategory, UpsertBudget, AddDismissal and UpsertSetting."
+covers = ["CAP-3"]
+after = [4]
+hitl = false
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-9-categories-are-referenced-by-name-adopted"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Sync runs on its own"
+description = "Completes AD-14. The coordinator runs at most one sync and coalesces overlapping requests. Syncs start on app open and on return to the foreground. A unique WorkManager job (CONNECTED, KEEP, exponential backoff, Hilt worker) is enqueued by observing the outbox whenever it's non-empty, not by hooking each writer, so changes reach the Sheet with the app closed. A `SheetMissing` result runs story 2.4's find-or-create and stores the new Sheet ID (AD-20). Background runs return `NeedsUserConsent` without prompting (AD-10); entry 11 owns the foreground prompt. Extends entry 1's sync state into the `:domain` sync status flow: pending count, offline, error with entry 2's invalid count, and needs consent."
+verify = "WorkManager tests show the job is enqueued when the outbox becomes non-empty and retries with backoff; coordinator tests show overlapping requests run once; on the phone an Expense added offline reaches the Sheet after reconnecting with the app swiped away."
+covers = ["CAP-5"]
+after = [5]
+hitl = false
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-14-sync-triggers-adopted", "architecture-expense-tracker/architecture-expense-tracker.md#ad-20-session-lifecycle-adopted"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "Expense form sheet: add and edit"
+description = "Replaces entry 1's minimal form with the designed bottom sheet (scrim token per CLAUDE.md). Fields are Amount, Date, Time, Description and Category. Save stays disabled until a Category is picked and the amount is above zero. The FAB opens it empty, and tapping a row opens it in edit mode through `EditExpenseUseCase`, whose UpsertExpense carries the base entry 2 stores and which never changes Source. On save the sheet closes and the snackbar confirms ('₹450 added to Food'). Adds the shared money formatter in `:app` (AD-6), taking a Currency that defaults to INR; entry 12 feeds it the Settings Currency. Epic 5's Inbox Add reuses this sheet with pre-filled values."
+verify = "Compose tests cover Save disabled without a Category, a zero amount rejected, add and edit saving through the use cases and the snackbar text; formatter tests cover INR grouping; Roborazzi baselines cover the sheet in light, dark and 1.75x font."
+covers = ["CAP-3", "CAP-18"]
+after = [2]
+hitl = false
+risk = "medium"
+references = ["ux-expense-tracker/mockups/key-expenses.html", "ux-expense-tracker/DESIGN.md#components"]
+
+[[entry]]
+id = 8
+type = "story"
+title = "Expenses tab per the design"
+description = "Replaces entry 1's minimal list with the designed Expenses tab. Expenses list newest first, grouped by day under pinned 'Today' / 'Yesterday' / 'Tue, 6 Oct' headers with day totals. Rows show the 'Waiting to sync' chip. Search matches description or Category name, and single-choice Category chips offer 'All' or one Category. Builds the shared sync pill component with its pending state ('1 waiting to sync', hidden at 0), from entry 1's sync state; entry 11 adds the other states. Shows glass placeholders while entry 1's sync state says the first sync is running, the empty states, and pull to refresh calling `RequestSyncUseCase`. The period filter is entry 9."
+verify = "Compose tests show search and chips list exactly the matching Expenses, day grouping and totals, and pull to refresh requesting a sync; Roborazzi baselines cover the list, empty and loading states."
+covers = ["CAP-4", "CAP-5"]
+after = [7]
+hitl = false
+risk = "medium"
+references = ["ux-expense-tracker/mockups/key-expenses.html"]
+
+[[entry]]
+id = 9
+type = "story"
+title = "Shared period filter on Expenses"
+description = "Builds the period filter component (This month default, Previous months list, Custom range picker) and a session-scoped shared selection in `:domain` holding the period and the Category, which resets to This month and All at launch. The Expenses list applies it with search, and entry 8's chips read and write its Category. Epic 4 puts the same component on Home and sets the Category when a Home Category row opens Expenses; this entry owns the component and the selection."
+verify = "Domain tests cover month and custom-range boundaries with the injected Clock; Compose tests show each choice filters the list, the selection survives a tab switch, and setting its Category from outside selects that chip; a Roborazzi baseline covers the filter."
+covers = ["CAP-17"]
+after = [8]
+hitl = false
+risk = "medium"
+references = ["ux-expense-tracker/mockups/key-home.html"]
+
+[[entry]]
+id = 10
+type = "story"
+title = "Delete an Expense"
+description = "Adds `DeleteExpenseUseCase`. It writes the DeleteExpense outbox entry and, for an SMS-sourced Expense, the AddDismissal entry in the same transaction (AD-13). On the list, swiping left past the threshold opens the confirmation ('Delete ₹2,300 Amazon?' / 'This also removes it from your Google Sheet.'), and Cancel slides the row back. Long-press opens Edit and Delete, and both are also TalkBack custom actions."
+verify = "Domain tests cover the outbox entries for a plain and an SMS-sourced delete; Compose tests cover swipe, cancel, confirm, the long-press menu and the custom actions; on the phone a deleted Expense leaves the Sheet after sync."
+covers = ["CAP-3"]
+after = [4, 9]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 11
+type = "story"
+title = "Sync status pill and the consent prompt"
+description = "Adds the offline, error and consent states to entry 8's sync pill, from entry 6's status flow. They read 'Offline · 1 waiting to sync', 'Couldn't sync. Tap to retry.' with the invalid-row count, and 'Sign-in needed to sync'. Tapping the consent state shows the Google consent prompt in the foreground through `AccountGateway.requestConsent`, then syncs. A foreground sync that meets NeedsUserConsent prompts the same way (AD-10). Epic 4 places the same pill on Home, and entry 12 puts the error and consent states in the Settings tile."
+verify = "Compose tests show each pill state from a fake status flow, retry requesting a sync, and the consent tap calling requestConsent; Roborazzi baselines cover the states."
+covers = ["CAP-5"]
+after = [6, 10]
+hitl = false
+risk = "medium"
+references = ["ux-expense-tracker/mockups/key-settings.html"]
+
+[[entry]]
+id = 12
+type = "story"
+title = "Currency and display name in Settings"
+description = "Adds the Preferences section from the Settings mockup: a Currency dropdown of two-decimal currencies (INR default) and a Display name field. Both save through entry 5's `SettingRepository` to the Settings tab and read back from the mirror, so they restore on a new phone. Every amount the app shows goes through entry 7's money formatter with the chosen Currency, which changes only the symbol and format. Adds entry 11's error and consent pills to story 2.6's Google account tile. Replaces Home's greeting tracer (`GetGreetingUseCase`, `StubGreetingGateway`) with the display name greeting ('Good evening, Shylock') from the Settings mirror and the injected Clock."
+verify = "Domain tests cover the setting writes and defaults; Compose tests show a Currency change re-formatting amounts without converting them; Home's greeting follows the display name and time of day; after clearing app data and signing in, the chosen Currency and name return."
+covers = ["CAP-18"]
+after = [5, 11, "2.6"]
+hitl = false
+risk = "medium"
+references = ["ux-expense-tracker/mockups/key-settings.html"]
+
+[[entry]]
+id = 13
+type = "story"
+title = "Sign out"
+description = "Adds `SignOutUseCase` and `AccountGateway` sign-out (AD-20). With a non-empty outbox, Settings first shows 'Sign out?' / '1 change hasn't reached your Google Sheet. Signing out deletes it from this phone.' with Cancel and a red Sign out. Signing out then cancels all sync work and erases the Room mirror, the outbox and the session. It clears the in-memory Drive account and token (story 2.3's `useAccount`) and returns to Sign-in."
+verify = "Use case tests cover the warning only with pending changes and the full erase; an app test shows sign-out lands on Sign-in with no Expense rows left in Room and no enqueued work."
+covers = ["CAP-19"]
+after = [6, 12]
+hitl = false
+risk = "high"
+references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-20-session-lifecycle-adopted"]
+
+[[entry]]
+id = 14
+type = "story"
+title = "Expenses and sync on the Play closed track"
+description = "Adds any R8 keep rules the new models need and builds the signed AAB with scripts/build-release-bundle.sh, which the owner uploads to the closed test track. On the installed release, the owner checks UJ-3 (an offline add, then a laptop edit and a blank-Source row in the Sheet), the Sheet winning a conflict, a new-phone restore after clearing app data, a Currency change and sign-out."
+verify = "The closed-track build passes each listed check on the owner's phone, with the app and the Sheet agreeing afterwards."
+covers = ["CAP-2", "CAP-3", "CAP-4", "CAP-5", "CAP-6", "CAP-7", "CAP-17", "CAP-18", "CAP-19"]
+after = [13, "1.7", "2.7"]
+hitl = true
+risk = "medium"
+references = ["docs/PLAY_RELEASE.md"]
+
+[[entry]]
+id = 15
+type = "story"
+title = "Refactor sweep"
+description = "Cleans up what this epic's plans and deferred review findings name; scope is set when it starts."
+verify = "CI is green and every deferred finding from this epic is resolved or recorded."
+covers = []
+after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+hitl = false
+risk = "low"
