@@ -14,9 +14,10 @@
         <item quantity="other">%1$d new</item>
     </plurals>
 
-    <!-- Sign-in (minimal until story 2.5 designs it). -->
+    <!-- Sign-in (DESIGN.md Sign-in screen). -->
     <string name="signin_continue_google">Continue with Google</string>
     <string name="signin_setting_up">Setting up your Expense Sheet…</string>
     <string name="signin_error_generic">Couldn\'t sign in. Check your connection and try again.</string>
     <string name="signin_error_not_configured">Sign-in isn\'t set up in this build.</string>
+    <string name="signin_privacy">Private: lives in your own Google Sheet</string>
 </resources>
