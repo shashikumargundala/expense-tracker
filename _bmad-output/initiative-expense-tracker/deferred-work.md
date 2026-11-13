@@ -62,3 +62,6 @@ Plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-refa
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-first-release-on-the-play-closed-track-plan.md`
   summary: Update the "Web client ID" and "Sharing an APK" bullets in CLAUDE.md and `.github/copilot-instructions.md`. `GOOGLE_CLOUD_SETUP.md` now adds a release Android client and publishing to production, and "until the Play release (story 1.7)" is now ambiguous.
   evidence: Story 1.7 added steps 8 and 9 to the Cloud setup and the Play release flow; the agent-context bullets still describe the Testing-only setup.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-account-and-sheet/story-find-or-create-the-expense-sheet-at-sign-in-plan.md`
+  summary: Update CLAUDE.md and `.github/copilot-instructions.md` for story 2.3: `ExpenseSheetGateway` and `EnsureExpenseSheetUseCase`, `AccountGateway.requestConsent`, `SignInUseCase` no longer saving the session itself (the session is stored once the Sheet ID is known), the gate opening Home only for a session with a Sheet ID, the `:domain` `testFixtures` source set, and `signin_progress_text`.
+  evidence: Both files still say `SignInUseCase` stores the session on success and that story 2.3 launches the consent request; the fix edits agent-context files, which review defers.

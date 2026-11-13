@@ -23,5 +23,13 @@ class FakeAccountGateway(private val signIn: () -> SignInResult) : AccountGatewa
 
   override suspend fun signIn(): SignInResult = signIn.invoke()
 
+  var consentGranted = true
+  var consentRequests = 0
+
   override suspend fun getAccess(): AccessResult = access
+
+  override suspend fun requestConsent(request: ConsentRequest): Boolean {
+    consentRequests++
+    return consentGranted
+  }
 }

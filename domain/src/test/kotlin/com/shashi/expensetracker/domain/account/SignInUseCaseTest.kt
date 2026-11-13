@@ -10,16 +10,20 @@ import org.junit.Test
 class SignInUseCaseTest {
 
   private val sessions = FakeSessionRepository()
+  private val sheets = FakeExpenseSheetGateway()
+  private val success = SignInResult.Success(accountId = "1234", email = "shylock@example.com")
 
-  private fun useCase(signIn: () -> SignInResult) = SignInUseCase(FakeAccountGateway(signIn), sessions)
+  private fun useCase(signIn: () -> SignInResult): SignInUseCase {
+    val gateway = FakeAccountGateway(signIn)
+    return SignInUseCase(gateway, EnsureExpenseSheetUseCase(gateway, sheets, sessions))
+  }
 
   @Test
-  fun `success saves the session and returns success`() = runTest {
-    val success = SignInResult.Success(accountId = "1234", email = "shylock@example.com")
-
+  fun `success saves the session with its sheet id once`() = runTest {
     assertEquals(success, useCase { success }())
 
-    assertEquals(Session(accountId = "1234", email = "shylock@example.com", sheetId = null), sessions.session.value)
+    assertEquals(Session("1234", "shylock@example.com", sheetId = "test-sheet"), sessions.session.value)
+    assertEquals(1, sessions.saveCount)
   }
 
   @Test
@@ -51,10 +55,31 @@ class SignInUseCaseTest {
   fun `failed save becomes StorageFailed`() = runTest {
     sessions.failSave = true
 
-    val result = useCase { SignInResult.Success("1234", "shylock@example.com") }()
+    assertEquals(SignInResult.Failure(SignInFailure.StorageFailed), useCase { success }())
 
-    assertEquals(SignInResult.Failure(SignInFailure.StorageFailed), result)
     assertNull(sessions.session.value)
+  }
+
+  @Test
+  fun `sheet failure becomes Unavailable and saves nothing`() = runTest {
+    sheets.findResult = ExpenseSheetResult.Failure(ExpenseSheetFailure.Network)
+
+    assertEquals(SignInResult.Failure(SignInFailure.Unavailable), useCase { success }())
+
+    assertEquals(0, sessions.saveCount)
+  }
+
+  @Test
+  fun `declined consent is reported as cancelled and saves nothing`() = runTest {
+    val gateway = FakeAccountGateway { success }
+    gateway.access = AccessResult.NeedsUserConsent(object : ConsentRequest {})
+    gateway.consentGranted = false
+
+    val result = SignInUseCase(gateway, EnsureExpenseSheetUseCase(gateway, sheets, sessions))()
+
+    assertEquals(SignInResult.Cancelled, result)
+    assertEquals(0, sessions.saveCount)
+    assertEquals(0, sheets.findCalls)
   }
 
   @Test
