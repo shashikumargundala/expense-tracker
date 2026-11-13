@@ -74,3 +74,20 @@ Plan: `_bmad-output/initiative-expense-tracker/epic-platform-baseline/story-refa
 - source_plan: `_bmad-output/initiative-expense-tracker/epic-account-and-sheet/story-settings-google-account-tile-plan.md`
   summary: Update CLAUDE.md and `.github/copilot-instructions.md` for story 2.6. Settings is no longer a placeholder (the Google account tile, `settings/OpenSheet.kt` opening the Sheets app with Play Store fallbacks), the tags gain `settings_account` and `settings_open_sheet`, and the screenshot list gains `SettingsScreenshotTest`.
   evidence: Line 80 of both files says every tab except Home is a placeholder, and the tag list and the Screenshots bullet don't mention Settings; the triage rule defers edits to agent-context files.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-account-and-sheet/story-refactor-sweep-plan.md`
+  summary: An intermittent "Unexpected failure during lint analysis" in `:app` lint, reported on `ExpenseTrackerAppTest.kt`. It hit the first full `build` after the 2.4 and 2.6 changes and passed on re-run.
+  evidence: It didn't reproduce in story 2.8: two `./gradlew :app:lintDebug --rerun-tasks` runs passed, and the failing logs weren't kept. If CI hits it, keep the full lint log and re-run with `--rerun-tasks`; a recurring crash on the same file points to a lint and Kotlin version mismatch to raise upstream.
+
+## Resolved in story 2.8
+
+Plan: `_bmad-output/initiative-expense-tracker/epic-account-and-sheet/story-refactor-sweep-plan.md`. One line per open entry above, in order.
+
+- Rotate or restrict the old Firebase API key (project `silent-charge-85xj8`): **carried**. It stays open as the owner's action in the Google Cloud console.
+- Reword the Screenshots note ("today only the shell on Home"): **resolved**. Both files list Home, Sign-in and Settings.
+- `AccessFailure.Unauthorized` listed as a `getAccess()` outcome: **resolved**. Both files say `getAccess()` fails only with `NotSignedIn` or `Unavailable`, and `Unauthorized` comes only from API calls (`ApiFailure.Access` after the one retry).
+- The "Web client ID" and "Sharing an APK" bullets after story 1.7: **resolved**. The Cloud steps list the release Android client and publishing, "until the Play release (story 1.7)" is gone, and both files say the script needs a real terminal for its password prompt.
+- CLAUDE.md for story 2.3: **resolved**. Both files describe `ExpenseSheetGateway`, `EnsureExpenseSheetUseCase` (the session is stored once the Sheet ID is known), `requestConsent`, the gate that needs a Sheet ID, and the `testFixtures` `FakeExpenseSheetGateway`.
+- Story 3.13's sign-out must cancel and wait for any running sync or recovery before erasing: **carried** to epic 3 entry 13 (sign-out). Still unverified; medium if true.
+- CLAUDE.md for story 2.4: **resolved**. Both files describe `getFile`, `trashed`, `check`, `SheetMissing` and `RecoverExpenseSheetUseCase`.
+- CLAUDE.md for story 2.6: **resolved**. Both files describe the Settings Google account tile, `OpenSheet.kt`, the `settings_account` and `settings_open_sheet` tags, and `SettingsScreenshotTest`.
+- Intermittent `:app` lint crash: **recorded** as the open entry above this section.
