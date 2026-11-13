@@ -84,6 +84,8 @@ context: []
 
 ## Implementation Notes
 
+- Device check (2026-11-13, S23, debug build of 9c651c0): with airplane mode on, a force-stopped app cold-started to Home in 555 ms with no Sign-in screen, no error and no crash in logcat. Recovery itself isn't reachable from the app until epic 3, so its Drive behaviour is covered only by the mockwebserver3 tests.
+
 ## Plan Change Log
 
 ### Loop 1 (2026-11-13, bad_plan)
