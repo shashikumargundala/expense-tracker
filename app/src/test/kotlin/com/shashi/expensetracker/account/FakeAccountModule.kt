@@ -35,7 +35,10 @@ class FakeSessionRepository @Inject constructor() : SessionRepository {
   }
 }
 
-/** Returns [result] for every sign-in and counts calls; set [access] and [consentGranted] to script consent. */
+/**
+ * Returns [result] for every sign-in and counts calls ([calls], [accessCalls], [consentRequests]);
+ * set [access] and [consentGranted] to script consent.
+ */
 @Singleton
 class FakeAccountGateway @Inject constructor() : AccountGateway {
   var result: SignInResult = SignInResult.Success("test-account", "tester@example.com")
@@ -49,8 +52,12 @@ class FakeAccountGateway @Inject constructor() : AccountGateway {
   var access: AccessResult = AccessResult.Granted
   var consentGranted = true
   var consentRequests = 0
+  var accessCalls = 0
 
-  override suspend fun getAccess(): AccessResult = access
+  override suspend fun getAccess(): AccessResult {
+    accessCalls++
+    return access
+  }
 
   override suspend fun requestConsent(request: ConsentRequest): Boolean {
     consentRequests++

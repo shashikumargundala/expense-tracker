@@ -20,6 +20,10 @@ interface DriveService {
     @Query("pageSize") pageSize: Int?,
   ): FileList
 
+  /** `files.get` metadata, for example `fields = "id,trashed"`. A deleted file is a 404. */
+  @GET("files/{fileId}")
+  suspend fun getFile(@Path("fileId") fileId: String, @Query("fields") fields: String?): DriveFile
+
   /** `files.update` metadata only, for example to set `appProperties`. */
   @PATCH("files/{fileId}")
   suspend fun updateFile(

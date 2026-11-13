@@ -14,6 +14,8 @@ data class DriveFile(
   /** RFC 3339 timestamp, for example `2026-10-28T09:15:00.000Z`. */
   val createdTime: String? = null,
   val appProperties: Map<String, String>? = null,
+  /** From `files.get`; true once the file is in the trash. */
+  val trashed: Boolean? = null,
 )
 
 /** A Drive v3 `files.list` response. Paging isn't used: callers ask for a small `pageSize`. */

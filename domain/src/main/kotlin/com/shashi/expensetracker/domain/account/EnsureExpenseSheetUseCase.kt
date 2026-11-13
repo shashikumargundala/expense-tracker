@@ -15,9 +15,10 @@ sealed interface EnsureExpenseSheetResult {
 }
 
 /**
- * After Google sign-in: gets Drive access (showing the consent prompt if needed), finds the Expense
- * Sheet or creates it, then stores the whole [Session] once, with its `sheetId`. A failure or a
- * declined prompt stores nothing. Never throws, except for coroutine cancellation.
+ * After Google sign-in, or when [RecoverExpenseSheetUseCase] finds the stored Sheet missing during a
+ * session: gets Drive access (showing the consent prompt if needed), finds the Expense Sheet or
+ * creates it, then stores the whole [Session] once, with its `sheetId`. A failure or a declined
+ * prompt stores nothing. Never throws, except for coroutine cancellation.
  */
 class EnsureExpenseSheetUseCase
 @Inject
@@ -65,7 +66,7 @@ constructor(
    * Returns [ExpenseSheetResult.NeedsConsent] only when the user declined; if the retry still needs
    * consent after a granted prompt, that is an [ExpenseSheetFailure.Access] failure.
    */
-  private suspend fun withConsent(call: suspend () -> ExpenseSheetResult): ExpenseSheetResult {
+  internal suspend fun withConsent(call: suspend () -> ExpenseSheetResult): ExpenseSheetResult {
     val first = call()
     if (first !is ExpenseSheetResult.NeedsConsent) return first
     if (!accounts.requestConsent(first.request)) return first
@@ -77,11 +78,15 @@ constructor(
     }
   }
 
-  private fun ExpenseSheetResult.toOutcome(): EnsureExpenseSheetResult =
+  /** Maps a non-success gateway result (or a [ExpenseSheetResult.Ready]) to this use case's result. */
+  internal fun ExpenseSheetResult.toOutcome(): EnsureExpenseSheetResult =
     when (this) {
       is ExpenseSheetResult.Failure -> EnsureExpenseSheetResult.Failure(reason)
       is ExpenseSheetResult.NeedsConsent -> EnsureExpenseSheetResult.ConsentDeclined
       is ExpenseSheetResult.Ready -> EnsureExpenseSheetResult.Ready(sheetId)
-      ExpenseSheetResult.NotFound -> EnsureExpenseSheetResult.Failure(ExpenseSheetFailure.Unexpected)
+      // Callers handle NotFound and SheetMissing before mapping; find() and create() never return
+      // SheetMissing, and check() never returns NotFound.
+      ExpenseSheetResult.NotFound,
+      ExpenseSheetResult.SheetMissing -> EnsureExpenseSheetResult.Failure(ExpenseSheetFailure.Unexpected)
     }
 }
