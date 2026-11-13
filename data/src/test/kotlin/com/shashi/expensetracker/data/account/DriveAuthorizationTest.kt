@@ -115,6 +115,25 @@ class DriveAuthorizationTest {
   }
 
   @Test
+  fun useAccountAuthorizesThatEmailAheadOfTheStoredSession() = runTest {
+    authorization.useAccount("portia@example.com")
+
+    assertEquals(AccessResult.Granted, authorization.getAccess())
+
+    assertEquals(listOf("portia@example.com"), authorizer.authorizedEmails)
+  }
+
+  @Test
+  fun useAccountWorksBeforeAnySessionIsStored() = runTest {
+    sessions.session.value = null
+    authorization.useAccount("portia@example.com")
+
+    assertEquals(AccessResult.Granted, authorization.getAccess())
+
+    assertEquals(listOf("portia@example.com"), authorizer.authorizedEmails)
+  }
+
+  @Test
   fun invalidateClearsTheTokenAndTheNextFetchAuthorizesAgain() = runTest {
     authorization.fetchToken()
 
