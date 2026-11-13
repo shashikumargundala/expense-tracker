@@ -23,7 +23,7 @@ val NavItemHeight = 48.dp
  * The darker pink DESIGN.md names for text on the gradient's pink end. White on #EC4899 fails AA,
  * so the active nav item's gradient ends here instead, and its white label passes (~4.6:1).
  */
-private val ActiveNavGradientEnd = Color(0xFFDB2777)
+internal val ActiveNavGradientEnd = Color(0xFFDB2777)
 
 /** Above this font scale the active nav item shows its icon only (DESIGN.md Pill nav). */
 const val NavLabelMaxFontScale = 1.3f

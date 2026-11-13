@@ -20,4 +20,11 @@
     <string name="signin_error_generic">Couldn\'t sign in. Check your connection and try again.</string>
     <string name="signin_error_not_configured">Sign-in isn\'t set up in this build.</string>
     <string name="signin_privacy">Private: lives in your own Google Sheet</string>
+
+    <!-- Settings (DESIGN.md Settings screen). -->
+    <string name="settings_google_account">Google account</string>
+    <string name="settings_signed_in_with_google">Signed in with Google</string>
+    <string name="settings_expense_sheet">Expense Sheet</string>
+    <string name="settings_in_your_drive">In your Google Drive</string>
+    <string name="settings_open_sheet">Open my Sheet</string>
 </resources>
