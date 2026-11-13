@@ -18,7 +18,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The find and create contract against `mockwebserver3`, through the real client and services. */
+/** The find, create and check contract against `mockwebserver3`, through the real client and services. */
 @RunWith(AndroidJUnit4::class)
 class SheetsExpenseSheetGatewayTest {
 
@@ -130,5 +130,45 @@ class SheetsExpenseSheetGatewayTest {
     server.enqueue(json("{}"))
 
     assertEquals(ExpenseSheetResult.Failure(ExpenseSheetFailure.Unexpected), gateway.create())
+  }
+
+  @Test
+  fun `check of a present sheet is Ready and asks only for id and trashed`() = runTest {
+    server.enqueue(json("""{"id":"stored-sheet","trashed":false}"""))
+
+    assertEquals(ExpenseSheetResult.Ready("stored-sheet"), gateway.check("stored-sheet"))
+
+    val request = server.takeRequest()
+    assertEquals("GET", request.method)
+    assertEquals("/drive/v3/files/stored-sheet", request.url.encodedPath)
+    assertEquals("id,trashed", request.url.queryParameter("fields"))
+  }
+
+  @Test
+  fun `check of a trashed sheet is SheetMissing`() = runTest {
+    server.enqueue(json("""{"id":"stored-sheet","trashed":true}"""))
+
+    assertEquals(ExpenseSheetResult.SheetMissing, gateway.check("stored-sheet"))
+  }
+
+  @Test
+  fun `check of a deleted sheet is SheetMissing`() = runTest {
+    server.enqueue(json("""{"error":{"code":404,"message":"File not found"}}""", code = 404))
+
+    assertEquals(ExpenseSheetResult.SheetMissing, gateway.check("stored-sheet"))
+  }
+
+  @Test
+  fun `check server error is an Unexpected failure`() = runTest {
+    server.enqueue(json("{}", code = 500))
+
+    assertEquals(ExpenseSheetResult.Failure(ExpenseSheetFailure.Unexpected), gateway.check("stored-sheet"))
+  }
+
+  @Test
+  fun `check network failure is a Network failure`() = runTest {
+    server.close()
+
+    assertEquals(ExpenseSheetResult.Failure(ExpenseSheetFailure.Network), gateway.check("stored-sheet"))
   }
 }

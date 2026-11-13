@@ -29,7 +29,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The sign-in gate through the real activity: no session, success, cancel and failure. */
+/** The sign-in gate through the real activity: no session, stored session, success, cancel and failure. */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 @Config(application = HiltTestApplication::class, qualifiers = "w360dp-h800dp")
@@ -145,6 +145,25 @@ class SignInGateTest {
     composeRule.onNodeWithTag("signin_error").assertIsDisplayed()
     composeRule.onNodeWithTag("screen_home").assertDoesNotExist()
     assertNull(sessions.session.value)
+  }
+
+  /** The cold start reads only the stored session, so it opens Home in airplane mode. */
+  @Test
+  fun storedSessionColdStartsToHomeWithNoNetworkCalls() {
+    sessions.session.value = SignedInTestSession
+    scenario = ActivityScenario.launch(MainActivity::class.java)
+    composeRule.waitUntil(timeoutMillis = 5_000) {
+      composeRule.onAllNodes(hasTestTag("screen_home")).fetchSemanticsNodes().isNotEmpty()
+    }
+    composeRule.waitForIdle()
+
+    composeRule.onNodeWithTag("screen_home").assertIsDisplayed()
+    composeRule.onNodeWithTag("screen_signin").assertDoesNotExist()
+    assertEquals(0, gateway.calls)
+    assertEquals(0, gateway.accessCalls)
+    assertEquals(0, sheets.findCalls)
+    assertEquals(0, sheets.createCalls)
+    assertEquals(0, sheets.checkCalls)
   }
 
   @Test

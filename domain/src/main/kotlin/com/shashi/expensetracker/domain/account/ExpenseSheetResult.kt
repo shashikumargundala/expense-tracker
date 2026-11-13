@@ -8,13 +8,19 @@ sealed interface ExpenseSheetResult {
   /** From `find()` only: no tagged Sheet exists. */
   data object NotFound : ExpenseSheetResult
 
+  /**
+   * The stored Sheet was deleted or trashed in Drive (AD-20). From `check()` today; epic 3's tab reads
+   * and writes return it too. `RecoverExpenseSheetUseCase` handles it.
+   */
+  data object SheetMissing : ExpenseSheetResult
+
   /** The user must grant Drive access first; [request] goes back to `AccountGateway.requestConsent`. */
   data class NeedsConsent(val request: ConsentRequest) : ExpenseSheetResult
 
   data class Failure(val reason: ExpenseSheetFailure) : ExpenseSheetResult
 }
 
-/** Why finding or creating the Sheet failed. */
+/** Why finding, creating or checking the Sheet failed. */
 enum class ExpenseSheetFailure {
   /** Access was refused or is unavailable (no session, 401 after retry, no Play services). */
   Access,

@@ -78,6 +78,8 @@ class EnsureExpenseSheetUseCaseTest {
     }
 
     override suspend fun create(): ExpenseSheetResult = error("not used")
+
+    override suspend fun check(sheetId: String): ExpenseSheetResult = error("not used")
   }
 
   @Test

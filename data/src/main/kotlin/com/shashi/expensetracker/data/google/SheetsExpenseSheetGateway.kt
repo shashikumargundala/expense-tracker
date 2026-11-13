@@ -8,7 +8,8 @@ import javax.inject.Inject
 /**
  * [ExpenseSheetGateway] over Drive and Sheets REST. Find is `files.list` on the `appProperties`
  * marker with the oldest `createdTime` winning. Create writes tabs, headers and Categories first and
- * sets the marker last, so a half-built file is never found. Nothing is logged here.
+ * sets the marker last, so a half-built file is never found. Check is `files.get`: a 404 or a
+ * trashed file is [ExpenseSheetResult.SheetMissing]. Nothing is logged here.
  */
 class SheetsExpenseSheetGateway
 @Inject
@@ -51,6 +52,14 @@ constructor(private val drive: DriveService, private val sheets: SheetsService) 
     }
     return ExpenseSheetResult.Ready(created)
   }
+
+  override suspend fun check(sheetId: String): ExpenseSheetResult =
+    when (val result = googleApiCall { drive.getFile(sheetId, fields = "id,trashed") }) {
+      is ApiResult.Failure ->
+        if (result.reason == ApiFailure.Http(404)) ExpenseSheetResult.SheetMissing else result.reason.toResult()
+      is ApiResult.Success ->
+        if (result.value.trashed == true) ExpenseSheetResult.SheetMissing else ExpenseSheetResult.Ready(sheetId)
+    }
 
   private fun ApiFailure.toResult(): ExpenseSheetResult =
     when (this) {

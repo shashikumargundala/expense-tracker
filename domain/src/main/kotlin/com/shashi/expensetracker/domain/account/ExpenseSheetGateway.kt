@@ -2,7 +2,7 @@ package com.shashi.expensetracker.domain.account
 
 /**
  * The Expense Sheet in the user's Google Drive. Implemented in `:data`; nothing here exposes a
- * Google type (AD-11). Neither call throws, except for coroutine cancellation.
+ * Google type (AD-11). No call throws, except for coroutine cancellation.
  */
 interface ExpenseSheetGateway {
   /**
@@ -18,4 +18,12 @@ interface ExpenseSheetGateway {
    * [ExpenseSheetResult.Failure]; never [ExpenseSheetResult.NotFound].
    */
   suspend fun create(): ExpenseSheetResult
+
+  /**
+   * Checks that the Sheet [sheetId] still exists and isn't trashed. Returns
+   * [ExpenseSheetResult.Ready] with [sheetId], [ExpenseSheetResult.SheetMissing] when Drive has no
+   * such file or it is trashed, [ExpenseSheetResult.NeedsConsent] or [ExpenseSheetResult.Failure];
+   * never [ExpenseSheetResult.NotFound].
+   */
+  suspend fun check(sheetId: String): ExpenseSheetResult
 }

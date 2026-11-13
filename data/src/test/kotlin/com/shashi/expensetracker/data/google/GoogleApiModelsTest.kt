@@ -47,6 +47,13 @@ class GoogleApiModelsTest {
   }
 
   @Test
+  fun fetchedFileParsesTrashed() {
+    val file = parse<DriveFile>("drive-file-get.json")
+
+    assertEquals(DriveFile(id = "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789", trashed = true), file)
+  }
+
+  @Test
   fun createdSpreadsheetParsesIdTitleAndTabs() {
     val spreadsheet = parse<Spreadsheet>("sheets-spreadsheet-create.json")
 
