@@ -147,10 +147,14 @@ class SignInGateTest {
     assertNull(sessions.session.value)
   }
 
-  /** The cold start reads only the stored session, so it opens Home in airplane mode. */
+  /**
+   * The start destination comes only from the stored session, so Home opens in airplane mode. The
+   * sync that launch starts fails offline without signing in, finding or creating a Sheet.
+   */
   @Test
-  fun storedSessionColdStartsToHomeWithNoNetworkCalls() {
+  fun storedSessionColdStartsToHomeOfflineWithoutSignInOrSheetSetup() {
     sessions.session.value = SignedInTestSession
+    sheets.checkResult = ExpenseSheetResult.Failure(ExpenseSheetFailure.Network)
     scenario = ActivityScenario.launch(MainActivity::class.java)
     composeRule.waitUntil(timeoutMillis = 5_000) {
       composeRule.onAllNodes(hasTestTag("screen_home")).fetchSemanticsNodes().isNotEmpty()
@@ -163,7 +167,6 @@ class SignInGateTest {
     assertEquals(0, gateway.accessCalls)
     assertEquals(0, sheets.findCalls)
     assertEquals(0, sheets.createCalls)
-    assertEquals(0, sheets.checkCalls)
   }
 
   @Test

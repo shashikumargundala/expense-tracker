@@ -1,5 +1,7 @@
 package com.shashi.expensetracker.domain.account
 
+import com.shashi.expensetracker.domain.category.Category
+import com.shashi.expensetracker.domain.expense.Expense
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -80,6 +82,13 @@ class EnsureExpenseSheetUseCaseTest {
     override suspend fun create(): ExpenseSheetResult = error("not used")
 
     override suspend fun check(sheetId: String): ExpenseSheetResult = error("not used")
+
+    override suspend fun readExpenses(sheetId: String): TabReadResult<Expense> = error("not used")
+
+    override suspend fun readCategories(sheetId: String): TabReadResult<Category> = error("not used")
+
+    override suspend fun writeExpense(sheetId: String, expense: Expense, existingRow: Int?): RowWriteResult =
+      error("not used")
   }
 
   @Test

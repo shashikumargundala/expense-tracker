@@ -38,3 +38,17 @@ data class BatchUpdateValuesRequest(val valueInputOption: String, val data: List
     const val RAW = "RAW"
   }
 }
+
+/** The reply to `spreadsheets.values.append`; only [updates] is read. */
+@JsonClass(generateAdapter = true)
+data class AppendValuesResponse(val updates: UpdateValuesResponse? = null)
+
+/** Which cells a values write changed, for example `updatedRange = "Expenses!A12:G12"`. */
+@JsonClass(generateAdapter = true)
+data class UpdateValuesResponse(val updatedRange: String? = null)
+
+/** `valueRenderOption` and `dateTimeRenderOption` values for reads (AD-7). */
+object ValueRenderOption {
+  const val UNFORMATTED_VALUE = "UNFORMATTED_VALUE"
+  const val SERIAL_NUMBER = "SERIAL_NUMBER"
+}

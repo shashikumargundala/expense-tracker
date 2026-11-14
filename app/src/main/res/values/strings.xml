@@ -27,4 +27,15 @@
     <string name="settings_expense_sheet">Expense Sheet</string>
     <string name="settings_in_your_drive">In your Google Drive</string>
     <string name="settings_open_sheet">Open my Sheet</string>
+
+    <!-- Expenses (minimal tracer list and form; the designed screen comes later in epic 3). -->
+    <string name="expenses_add">Add expense</string>
+    <string name="expenses_empty">No expenses yet</string>
+    <string name="expenses_waiting_to_sync">Waiting to sync</string>
+    <string name="expenses_save_failed">Couldn\'t save the expense. Try again.</string>
+    <string name="expense_form_amount">Amount</string>
+    <string name="expense_form_category">Category</string>
+    <string name="expense_form_no_categories">Categories appear after the first sync.</string>
+    <string name="expense_form_description">Description</string>
+    <string name="expense_form_save">Save</string>
 </resources>
