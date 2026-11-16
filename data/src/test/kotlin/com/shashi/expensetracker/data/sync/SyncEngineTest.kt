@@ -6,6 +6,7 @@ import com.shashi.expensetracker.data.budget.toDomain
 import com.shashi.expensetracker.data.category.CategoryEntity
 import com.shashi.expensetracker.data.expense.RoomExpenseRepository
 import com.shashi.expensetracker.data.expense.toDomain
+import com.shashi.expensetracker.data.expense.toEntity
 import com.shashi.expensetracker.data.inMemoryDatabase
 import com.shashi.expensetracker.data.inbox.toDomain
 import com.shashi.expensetracker.data.mirrorRefresh
@@ -78,16 +79,16 @@ class SyncEngineTest {
   }
 
   @Test
-  fun `a retry whose ID is already a row updates that row and never duplicates`() = runTest {
+  fun `a retry whose ID is already a row with the same values writes nothing and never duplicates`() = runTest {
     val other = sampleExpense(id = "other").copy(source = ExpenseSource.User)
     val expense = sampleExpense(id = "retry")
     sheet.expenses += other
-    sheet.expenses += expense.copy(amountPaise = 1)
+    sheet.expenses += expense
     repository.add(expense)
 
-    engine.sync("sheet-1")
+    assertEquals(SyncResult.Synced(pushed = 0, skipped = 0), engine.sync("sheet-1"))
 
-    assertEquals(listOf(expense to 3), sheet.writes)
+    assertTrue(sheet.writes.isEmpty())
     assertEquals(listOf(other, expense), sheet.expenses)
     assertTrue(db.outboxDao().getAll().isEmpty())
   }
@@ -95,7 +96,9 @@ class SyncEngineTest {
   @Test
   fun `rows are found by ID in the fresh read, not by a stored index`() = runTest {
     val expense = sampleExpense(id = "moved")
-    repository.add(expense)
+    val edited = expense.copy(amountPaise = 999)
+    db.expenseDao().upsert(edited.toEntity())
+    db.outboxDao().insert(OutboxEntity(type = OutboxType.UpsertExpense, rowKey = "moved", base = ExpenseBase.encode(expense), createdAt = on))
     // The Sheet was sorted: the row now sits below two others.
     sheet.expenses += sampleExpense(id = "x")
     sheet.expenses += sampleExpense(id = "y")
@@ -103,7 +106,7 @@ class SyncEngineTest {
 
     engine.sync("sheet-1")
 
-    assertEquals(4, sheet.writes.single().second)
+    assertEquals(listOf(edited to 4), sheet.writes)
   }
 
   @Test
@@ -184,20 +187,16 @@ class SyncEngineTest {
   }
 
   @Test
-  fun `an append that doesn't report its row re-reads before the next entry for that ID`() = runTest {
+  fun `two adds for one ID are one append with the latest values`() = runTest {
     val expense = sampleExpense(id = "twice")
     repository.add(expense)
     repository.add(expense.copy(amountPaise = 300))
-    val gateway =
-      object : ExpenseSheetGateway by sheet {
-        override suspend fun writeExpense(sheetId: String, expense: com.shashi.expensetracker.domain.expense.Expense, existingRow: Int?) =
-          sheet.writeExpense(sheetId, expense, existingRow).let { if (existingRow == null) RowWriteResult.Written(null) else it }
-      }
 
-    assertEquals(SyncResult.Synced(pushed = 2, skipped = 0), newEngine(gateway).sync("sheet-1"))
+    assertEquals(SyncResult.Synced(pushed = 1, skipped = 0), engine.sync("sheet-1"))
 
-    assertEquals(listOf(null, 2), sheet.writes.map { it.second })
-    assertEquals(1, sheet.expenses.size)
+    assertEquals(listOf(expense.copy(amountPaise = 300) to null), sheet.writes)
+    assertEquals(listOf(expense.copy(amountPaise = 300)), sheet.expenses)
+    assertTrue(db.outboxDao().getAll().isEmpty())
   }
 
   @Test
