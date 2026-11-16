@@ -1,0 +1,8 @@
+{
+  "sheets": [
+    { "properties": { "title": "Expenses" } },
+    { "properties": { "title": "Categories" } },
+    { "properties": { "title": "Budgets" } },
+    { "properties": { "title": "Dismissed" } }
+  ]
+}

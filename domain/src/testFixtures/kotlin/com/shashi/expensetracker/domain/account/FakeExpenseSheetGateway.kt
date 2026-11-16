@@ -1,17 +1,22 @@
 package com.shashi.expensetracker.domain.account
 
+import com.shashi.expensetracker.domain.budget.Budget
 import com.shashi.expensetracker.domain.category.Category
 import com.shashi.expensetracker.domain.expense.Expense
+import com.shashi.expensetracker.domain.inbox.Dismissal
+import com.shashi.expensetracker.domain.settings.Setting
 
 /**
  * In-memory [ExpenseSheetGateway] shared by `:domain`, `:data` and `:app` tests. Set [findResult],
  * [createResult] and [checkResult] to script outcomes; [findCalls], [createCalls] and [checkCalls]
  * count the calls, and [checkedIds] records each checked Sheet ID.
  *
- * The Expenses and Categories tabs are [expenses] and [categories], in sheet order, under a header in
- * row 1 (so the first Expense is row 2). By default reads return them and writes succeed; set
- * [readExpensesResult], [readCategoriesResult] or [writeResult] to script a failure instead. Every
- * write is recorded in [writes].
+ * The five tabs are [expenses], [categories], [budgets], [dismissals] and [settings], in sheet
+ * order, under a header in row 1 (so the first row is row 2). By default the layout is already
+ * complete, reads return the tabs and writes succeed; set [repairResult], a `read*Result`,
+ * [writeResult] or [appendCategoriesResult] to script a failure instead. Every Expense write is
+ * recorded in [writes], every repair counted in [repairCalls], and every appended Category kept in
+ * [appendedCategories] as well as added to [categories].
  */
 class FakeExpenseSheetGateway : ExpenseSheetGateway {
   var findResult: ExpenseSheetResult = ExpenseSheetResult.Ready("test-sheet")
@@ -30,17 +35,37 @@ class FakeExpenseSheetGateway : ExpenseSheetGateway {
   /** The Categories tab's rows, in sheet order. */
   val categories: MutableList<Category> = mutableListOf()
 
-  /** What `readExpenses` returns; null means the rows of [expenses]. */
-  var readExpensesResult: TabReadResult<Expense>? = null
+  /** The Budgets tab's rows, in sheet order. */
+  val budgets: MutableList<Budget> = mutableListOf()
 
-  /** What `readCategories` returns; null means the rows of [categories]. */
+  /** The Dismissed tab's rows, in sheet order. */
+  val dismissals: MutableList<Dismissal> = mutableListOf()
+
+  /** The Settings tab's rows, in sheet order. */
+  val settings: MutableList<Setting> = mutableListOf()
+
+  /** What `repairLayout` returns; null means the layout is complete. */
+  var repairResult: RowWriteResult? = null
+  var repairCalls = 0
+
+  /** What each read returns; null means the rows of its tab. */
+  var readExpensesResult: TabReadResult<Expense>? = null
   var readCategoriesResult: TabReadResult<Category>? = null
+  var readBudgetsResult: TabReadResult<Budget>? = null
+  var readDismissalsResult: TabReadResult<Dismissal>? = null
+  var readSettingsResult: TabReadResult<Setting>? = null
 
   /** What `writeExpense` returns; null means the write is applied to [expenses]. */
   var writeResult: RowWriteResult? = null
 
+  /** What `appendCategories` returns; null means the Categories are appended to [categories]. */
+  var appendCategoriesResult: RowWriteResult? = null
+
   /** Each `writeExpense` call: the Expense and the row it targeted (null for an append). */
   val writes: MutableList<Pair<Expense, Int?>> = mutableListOf()
+
+  /** Every Category passed to a successful `appendCategories`, in order. */
+  val appendedCategories: MutableList<Category> = mutableListOf()
   var readExpensesCalls = 0
   var readCategoriesCalls = 0
 
@@ -60,6 +85,12 @@ class FakeExpenseSheetGateway : ExpenseSheetGateway {
     return checkResult ?: ExpenseSheetResult.Ready(sheetId)
   }
 
+  override suspend fun repairLayout(sheetId: String): RowWriteResult =
+    synchronized(this) {
+      repairCalls++
+      repairResult ?: RowWriteResult.Written(null)
+    }
+
   override suspend fun readExpenses(sheetId: String): TabReadResult<Expense> =
     synchronized(this) {
       readExpensesCalls++
@@ -72,8 +103,26 @@ class FakeExpenseSheetGateway : ExpenseSheetGateway {
       readCategoriesResult ?: TabReadResult.Rows(categories.rows())
     }
 
+  override suspend fun readBudgets(sheetId: String): TabReadResult<Budget> =
+    synchronized(this) { readBudgetsResult ?: TabReadResult.Rows(budgets.rows()) }
+
+  override suspend fun readDismissals(sheetId: String): TabReadResult<Dismissal> =
+    synchronized(this) { readDismissalsResult ?: TabReadResult.Rows(dismissals.rows()) }
+
+  override suspend fun readSettings(sheetId: String): TabReadResult<Setting> =
+    synchronized(this) { readSettingsResult ?: TabReadResult.Rows(settings.rows()) }
+
   override suspend fun writeExpense(sheetId: String, expense: Expense, existingRow: Int?): RowWriteResult =
     synchronized(this) { write(expense, existingRow) }
+
+  override suspend fun appendCategories(sheetId: String, categories: List<Category>): RowWriteResult =
+    synchronized(this) {
+      appendCategoriesResult?.let { return it }
+      val first = this.categories.size + 1 + HEADER_ROWS
+      this.categories += categories
+      appendedCategories += categories
+      RowWriteResult.Written(first)
+    }
 
   private fun write(expense: Expense, existingRow: Int?): RowWriteResult {
     writes += expense to existingRow

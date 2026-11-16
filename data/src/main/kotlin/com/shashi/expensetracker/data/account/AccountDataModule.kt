@@ -4,8 +4,11 @@ import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import com.shashi.expensetracker.data.BuildConfig
+import com.shashi.expensetracker.data.budget.BudgetDao
 import com.shashi.expensetracker.data.category.CategoryDao
 import com.shashi.expensetracker.data.expense.ExpenseDao
+import com.shashi.expensetracker.data.inbox.DismissalDao
+import com.shashi.expensetracker.data.settings.SettingDao
 import com.shashi.expensetracker.data.sync.OutboxDao
 import dagger.Module
 import dagger.Provides
@@ -37,6 +40,12 @@ object AccountDataModule {
   @Provides fun provideExpenseDao(db: AppDatabase): ExpenseDao = db.expenseDao()
 
   @Provides fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
+
+  @Provides fun provideBudgetDao(db: AppDatabase): BudgetDao = db.budgetDao()
+
+  @Provides fun provideDismissalDao(db: AppDatabase): DismissalDao = db.dismissalDao()
+
+  @Provides fun provideSettingDao(db: AppDatabase): SettingDao = db.settingDao()
 
   @Provides fun provideOutboxDao(db: AppDatabase): OutboxDao = db.outboxDao()
 

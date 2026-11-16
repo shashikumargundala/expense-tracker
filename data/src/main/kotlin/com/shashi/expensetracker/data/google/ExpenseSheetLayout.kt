@@ -28,14 +28,24 @@ internal object ExpenseSheetLayout {
   const val COLOR = "Color"
   const val ICON = "Icon"
 
-  /** Tab title to its header row, in tab order. */
+  /** Budgets headers, besides [CATEGORY] and [AMOUNT]. */
+  const val MONTH = "Month"
+
+  /** Dismissed headers, besides [SMS_ID]. */
+  const val DISMISSED_ON = "Dismissed On"
+
+  /** Settings headers. */
+  const val KEY = "Key"
+  const val VALUE = "Value"
+
+  /** Tab title to its header row, in tab order. Sync adds any that are missing (AD-7). */
   val headers: Map<String, List<String>> =
     linkedMapOf(
       EXPENSES to listOf(ID, DATE, AMOUNT, CATEGORY, DESCRIPTION, SOURCE, SMS_ID),
       CATEGORIES to listOf(NAME, COLOR, ICON),
-      BUDGETS to listOf("Month", "Category", "Amount"),
-      DISMISSED to listOf("SMS ID", "Dismissed On"),
-      SETTINGS to listOf("Key", "Value"),
+      BUDGETS to listOf(MONTH, CATEGORY, AMOUNT),
+      DISMISSED to listOf(SMS_ID, DISMISSED_ON),
+      SETTINGS to listOf(KEY, VALUE),
     )
 
   /** Name, colour and icon of the five default Categories. */

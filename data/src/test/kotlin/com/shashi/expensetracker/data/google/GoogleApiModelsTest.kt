@@ -88,4 +88,21 @@ class GoogleApiModelsTest {
       moshi.adapter(BatchUpdateValuesRequest::class.java).toJson(request),
     )
   }
+
+  @Test
+  fun spreadsheetTitlesParse() {
+    val spreadsheet = parse<Spreadsheet>("sheets-spreadsheet-get-titles.json")
+
+    assertEquals(listOf("Expenses", "Categories", "Budgets", "Dismissed"), spreadsheet.sheets?.map { it.properties?.title })
+  }
+
+  @Test
+  fun addSheetRequestSerializesWithoutNulls() {
+    val request = BatchUpdateSpreadsheetRequest(listOf(SpreadsheetRequest(addSheet = AddSheetRequest(SheetProperties(title = "Settings")))))
+
+    assertEquals(
+      """{"requests":[{"addSheet":{"properties":{"title":"Settings"}}}]}""",
+      moshi.adapter(BatchUpdateSpreadsheetRequest::class.java).toJson(request),
+    )
+  }
 }

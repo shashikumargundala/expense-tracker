@@ -26,6 +26,15 @@ enum class OutboxType {
 
     /** Entry types whose `row_key` is a Category name. */
     val categoryTypes = listOf(UpsertCategory, DeleteCategory)
+
+    /** Entry types whose `row_key` is a Budget's `yyyy-MM|Category`. */
+    val budgetTypes = listOf(UpsertBudget)
+
+    /** Entry types whose `row_key` is an SMS fingerprint. */
+    val dismissalTypes = listOf(AddDismissal)
+
+    /** Entry types whose `row_key` is a Setting key. */
+    val settingTypes = listOf(UpsertSetting)
   }
 }
 

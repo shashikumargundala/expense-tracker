@@ -4,12 +4,15 @@ import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.shashi.expensetracker.data.budget.BudgetDao
 import com.shashi.expensetracker.data.budget.BudgetEntity
 import com.shashi.expensetracker.data.category.CategoryDao
 import com.shashi.expensetracker.data.category.CategoryEntity
 import com.shashi.expensetracker.data.expense.ExpenseDao
 import com.shashi.expensetracker.data.expense.ExpenseEntity
+import com.shashi.expensetracker.data.inbox.DismissalDao
 import com.shashi.expensetracker.data.inbox.DismissalEntity
+import com.shashi.expensetracker.data.settings.SettingDao
 import com.shashi.expensetracker.data.settings.SettingEntity
 import com.shashi.expensetracker.data.sync.OutboxDao
 import com.shashi.expensetracker.data.sync.OutboxEntity
@@ -42,6 +45,12 @@ abstract class AppDatabase : RoomDatabase() {
   abstract fun expenseDao(): ExpenseDao
 
   abstract fun categoryDao(): CategoryDao
+
+  abstract fun budgetDao(): BudgetDao
+
+  abstract fun dismissalDao(): DismissalDao
+
+  abstract fun settingDao(): SettingDao
 
   abstract fun outboxDao(): OutboxDao
 

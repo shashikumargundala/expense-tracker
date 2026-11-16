@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shashi.expensetracker.data.account.AppDatabase
 import com.shashi.expensetracker.data.expense.RoomExpenseRepository
 import com.shashi.expensetracker.data.inMemoryDatabase
+import com.shashi.expensetracker.data.mirrorRefresh
 import com.shashi.expensetracker.data.sampleExpense
 import com.shashi.expensetracker.data.testClock
 import com.shashi.expensetracker.domain.account.ExpenseSheetGateway
@@ -59,7 +60,7 @@ class SyncCoordinatorTest {
   @After fun tearDown() = db.close()
 
   private fun engine(gateway: ExpenseSheetGateway) =
-    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), MirrorRefresh(db, db.expenseDao(), db.categoryDao(), db.outboxDao()))
+    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh())
 
   @Test
   fun `a run syncs the stored session's Sheet`() = runTest {

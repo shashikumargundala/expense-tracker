@@ -18,6 +18,16 @@ data class Spreadsheet(
 @JsonClass(generateAdapter = true)
 data class SheetProperties(val sheetId: Int? = null, val title: String? = null)
 
+/** The body of `spreadsheets.batchUpdate`: its [requests] apply in order, all or none. */
+@JsonClass(generateAdapter = true)
+data class BatchUpdateSpreadsheetRequest(val requests: List<SpreadsheetRequest>)
+
+/** One `spreadsheets.batchUpdate` request; only `addSheet` is used. */
+@JsonClass(generateAdapter = true) data class SpreadsheetRequest(val addSheet: AddSheetRequest? = null)
+
+/** Adds a tab with [properties] (its title). */
+@JsonClass(generateAdapter = true) data class AddSheetRequest(val properties: SheetProperties)
+
 /**
  * A Sheets v4 `ValueRange`: [range] in A1 notation (`Expenses!A1:G1`) and its [values] row by row.
  * Cells are strings, numbers or booleans.
