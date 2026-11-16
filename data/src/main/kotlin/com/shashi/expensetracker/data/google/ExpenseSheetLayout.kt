@@ -14,11 +14,25 @@ internal object ExpenseSheetLayout {
   const val DISMISSED = "Dismissed"
   const val SETTINGS = "Settings"
 
+  /** Expenses headers; sync finds each column by these names (AD-7). */
+  const val ID = "ID"
+  const val DATE = "Date"
+  const val AMOUNT = "Amount"
+  const val CATEGORY = "Category"
+  const val DESCRIPTION = "Description"
+  const val SOURCE = "Source"
+  const val SMS_ID = "SMS ID"
+
+  /** Categories headers. */
+  const val NAME = "Name"
+  const val COLOR = "Color"
+  const val ICON = "Icon"
+
   /** Tab title to its header row, in tab order. */
   val headers: Map<String, List<String>> =
     linkedMapOf(
-      EXPENSES to listOf("ID", "Date", "Amount", "Category", "Description", "Source", "SMS ID"),
-      CATEGORIES to listOf("Name", "Color", "Icon"),
+      EXPENSES to listOf(ID, DATE, AMOUNT, CATEGORY, DESCRIPTION, SOURCE, SMS_ID),
+      CATEGORIES to listOf(NAME, COLOR, ICON),
       BUDGETS to listOf("Month", "Category", "Amount"),
       DISMISSED to listOf("SMS ID", "Dismissed On"),
       SETTINGS to listOf("Key", "Value"),

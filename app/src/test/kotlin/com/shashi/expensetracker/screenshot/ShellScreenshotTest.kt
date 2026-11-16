@@ -1,6 +1,7 @@
 package com.shashi.expensetracker.screenshot
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -17,7 +18,8 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Baselines of the five-tab shell, through the real activity and Hilt graph: Home in each variant,
- * plus Expenses on a 320dp screen, where the active label doesn't fit and the item is icon only.
+ * plus Expenses on a 320dp screen, where the active label doesn't fit and the item is icon only
+ * (with the empty tracer list and its add FAB).
  * FakeAccountModule gives a signed-in session, so launch opens Home.
  */
 @HiltAndroidTest
@@ -49,6 +51,10 @@ class ShellScreenshotTest {
   fun shellExpensesW320() {
     composeRule.onNodeWithTag("nav_expenses").performClick()
     composeRule.onNodeWithTag("screen_expenses").assertIsDisplayed()
+    // The mirror is read off the main thread; wait for its (empty) list so the capture is stable.
+    composeRule.waitUntil(timeoutMillis = 5_000) {
+      composeRule.onAllNodes(hasText("No expenses yet")).fetchSemanticsNodes().isNotEmpty()
+    }
     composeRule.captureScreen("shell_expenses_w320")
   }
 

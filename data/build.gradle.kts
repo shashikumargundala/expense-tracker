@@ -25,11 +25,20 @@ android {
   }
 
   compileOptions {
+    // java.time (LocalDateTime, Clock) on API 24.
+    isCoreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
   buildFeatures { buildConfig = true }
   testOptions { unitTests { isIncludeAndroidResources = true } }
+}
+
+// MigrationTestHelper reads the exported schemas as unit-test assets.
+androidComponents {
+  onVariants { variant ->
+    variant.hostTests.values.forEach { it.sources.assets?.addStaticSourceDirectory("$projectDir/schemas") }
+  }
 }
 
 // Room writes each schema version here; later epics add tables with migrations against it.
@@ -59,6 +68,9 @@ dependencies {
   implementation(libs.moshi)
   ksp(libs.moshi.kotlin.codegen)
 
+  coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+  testImplementation(testFixtures(project(":domain")))
   testImplementation(libs.junit)
   testImplementation(libs.robolectric)
   testImplementation(libs.androidx.test.core)

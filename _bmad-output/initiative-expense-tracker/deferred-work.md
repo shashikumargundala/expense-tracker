@@ -91,3 +91,9 @@ Plan: `_bmad-output/initiative-expense-tracker/epic-account-and-sheet/story-refa
 - CLAUDE.md for story 2.4: **resolved**. Both files describe `getFile`, `trashed`, `check`, `SheetMissing` and `RecoverExpenseSheetUseCase`.
 - CLAUDE.md for story 2.6: **resolved**. Both files describe the Settings Google account tile, `OpenSheet.kt`, the `settings_account` and `settings_open_sheet` tags, and `SettingsScreenshotTest`.
 - Intermittent `:app` lint crash: **recorded** as the open entry above this section.
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-expenses-and-sync/story-an-expense-added-offline-reaches-the-sheet-plan.md`
+  summary: Until the first successful sync fills the Categories mirror, no Expense can be added. This matters on a first open after an upgrade, or right after sign-in, while offline. The owner accepted it for story 3.1; revisit when entry 6 (sync runs on its own) or entry 7 (the designed form) lands.
+  evidence: Only `MirrorRefresh` writes the `categories` table, after a fully successful `SyncEngine.run`. Neither the 1 to 2 `AutoMigration` nor sign-in seeds it, so `ExpenseFormSheet` shows "Categories appear after the first sync".
+- source_plan: `_bmad-output/initiative-expense-tracker/epic-expenses-and-sync/story-an-expense-added-offline-reaches-the-sheet-plan.md`
+  summary: Record an AD-2 exception in the architecture spine. `:data` `sync`, `expense` and `category` share DAOs, entities and mappers, because AD-3's single transaction across a tab's table and the outbox crosses features. Alternatively, move the outbox and mirror DAOs to one shared `:data` package.
+  evidence: `SyncEngine` and `MirrorRefresh` import `data.expense` and `data.category` internals, and `RoomExpenseRepository` imports `data.sync.OutboxDao` and `OutboxEntity`. The spine notes an exception only for `:app` `home`; editing the spine is deferred (`bmad-architecture`).

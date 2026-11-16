@@ -3,17 +3,24 @@ package com.shashi.expensetracker.data.google
 import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
 import com.shashi.expensetracker.domain.account.ExpenseSheetGateway
 import com.shashi.expensetracker.domain.account.ExpenseSheetResult
+import com.shashi.expensetracker.domain.account.RowWriteResult
+import com.shashi.expensetracker.domain.account.TabReadResult
+import com.shashi.expensetracker.domain.category.Category
+import com.shashi.expensetracker.domain.expense.Expense
 import javax.inject.Inject
 
 /**
  * [ExpenseSheetGateway] over Drive and Sheets REST. Find is `files.list` on the `appProperties`
  * marker with the oldest `createdTime` winning. Create writes tabs, headers and Categories first and
  * sets the marker last, so a half-built file is never found. Check is `files.get`: a 404 or a
- * trashed file is [ExpenseSheetResult.SheetMissing]. Nothing is logged here.
+ * trashed file is [ExpenseSheetResult.SheetMissing]. Tab reads and the Expenses row write are
+ * [SheetTabs]'. Nothing is logged here.
  */
 class SheetsExpenseSheetGateway
 @Inject
 constructor(private val drive: DriveService, private val sheets: SheetsService) : ExpenseSheetGateway {
+
+  private val tabs = SheetTabs(sheets)
 
   override suspend fun find(): ExpenseSheetResult =
     when (
@@ -60,6 +67,13 @@ constructor(private val drive: DriveService, private val sheets: SheetsService) 
       is ApiResult.Success ->
         if (result.value.trashed == true) ExpenseSheetResult.SheetMissing else ExpenseSheetResult.Ready(sheetId)
     }
+
+  override suspend fun readExpenses(sheetId: String): TabReadResult<Expense> = tabs.readExpenses(sheetId)
+
+  override suspend fun readCategories(sheetId: String): TabReadResult<Category> = tabs.readCategories(sheetId)
+
+  override suspend fun writeExpense(sheetId: String, expense: Expense, existingRow: Int?): RowWriteResult =
+    tabs.writeExpense(sheetId, expense, existingRow)
 
   private fun ApiFailure.toResult(): ExpenseSheetResult =
     when (this) {

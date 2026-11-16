@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import com.shashi.expensetracker.data.BuildConfig
+import com.shashi.expensetracker.data.category.CategoryDao
+import com.shashi.expensetracker.data.expense.ExpenseDao
+import com.shashi.expensetracker.data.sync.OutboxDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,6 +33,12 @@ object AccountDataModule {
     Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.NAME).build()
 
   @Provides fun provideSessionDao(db: AppDatabase): SessionDao = db.sessionDao()
+
+  @Provides fun provideExpenseDao(db: AppDatabase): ExpenseDao = db.expenseDao()
+
+  @Provides fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
+
+  @Provides fun provideOutboxDao(db: AppDatabase): OutboxDao = db.outboxDao()
 
   /** `ExpenseTrackerApp` registers every callback in this set at startup. */
   @Provides

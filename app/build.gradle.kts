@@ -48,6 +48,8 @@ android {
     }
   }
   compileOptions {
+    // java.time (LocalDateTime, Clock) on API 24.
+    isCoreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
@@ -71,6 +73,7 @@ dependencies {
   implementation(libs.androidx.hilt.navigation.compose)
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
+  coreLibraryDesugaring(libs.desugar.jdk.libs)
 
   testImplementation(platform(libs.androidx.compose.bom))
   testImplementation(libs.androidx.compose.ui.test.junit4)
