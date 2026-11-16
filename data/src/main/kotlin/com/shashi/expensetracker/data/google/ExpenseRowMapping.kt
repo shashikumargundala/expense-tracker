@@ -10,6 +10,8 @@ import com.shashi.expensetracker.data.google.ExpenseSheetLayout.SOURCE
 import com.shashi.expensetracker.data.google.SheetValues.asText
 import com.shashi.expensetracker.data.google.SheetValues.cell
 import com.shashi.expensetracker.data.google.SheetValues.text
+import com.shashi.expensetracker.domain.account.ExpenseRowFix
+import com.shashi.expensetracker.domain.account.ExpenseRowRead
 import com.shashi.expensetracker.domain.expense.Expense
 import com.shashi.expensetracker.domain.expense.ExpenseSource
 
@@ -20,27 +22,43 @@ internal object ExpenseRowMapping {
   val requiredHeaders = listOf(ID, DATE, AMOUNT, CATEGORY)
 
   /**
-   * The Expense in [row]. A blank ID is [ParsedRow.Unkeyed]; a missing or unreadable Date, Amount
-   * or Category is [ParsedRow.Invalid]. A blank or unknown Source reads as User (AD-7).
+   * [row] as an [ExpenseRowRead]. A blank ID is a null `id`, and the rest is still parsed so a
+   * hand-typed row can be repaired (AD-5). A missing or unreadable Date, Amount or Category makes it
+   * invalid (a null `expense`). A blank or unknown Source reads as User (AD-7), and a blank one is
+   * flagged so the repair can write `User` back.
    */
-  fun expense(row: List<Any?>, columns: Map<String, Int>): ParsedRow<Expense> {
+  fun row(row: List<Any?>, columns: Map<String, Int>): ExpenseRowRead {
     fun cell(name: String): Any? = cell(row, columns, name)
-    val id = text(cell(ID)) ?: return ParsedRow.Unkeyed
-    val date = SheetValues.date(cell(DATE)) ?: return ParsedRow.Invalid
-    val amount = SheetValues.amountPaise(cell(AMOUNT)) ?: return ParsedRow.Invalid
-    val category = text(cell(CATEGORY)) ?: return ParsedRow.Invalid
-    return ParsedRow.Valid(
-      Expense(
-        id = id,
-        date = date,
-        amountPaise = amount,
-        category = category,
-        description = text(cell(DESCRIPTION)).orEmpty(),
-        source = if (text(cell(SOURCE)).equals("App", ignoreCase = true)) ExpenseSource.App else ExpenseSource.User,
-        smsId = text(cell(SMS_ID)),
-      )
+    val id = text(cell(ID))
+    val source = text(cell(SOURCE))
+    return ExpenseRowRead(id = id, expense = expense(id.orEmpty(), source, ::cell), sourceBlank = source == null)
+  }
+
+  private fun expense(id: String, source: String?, cell: (String) -> Any?): Expense? {
+    val date = SheetValues.date(cell(DATE)) ?: return null
+    val amount = SheetValues.amountPaise(cell(AMOUNT)) ?: return null
+    val category = text(cell(CATEGORY)) ?: return null
+    return Expense(
+      id = id,
+      date = date,
+      amountPaise = amount,
+      category = category,
+      description = text(cell(DESCRIPTION)).orEmpty(),
+      source = if (source.equals("App", ignoreCase = true)) ExpenseSource.App else ExpenseSource.User,
+      smsId = text(cell(SMS_ID)),
     )
   }
+
+  /**
+   * The cells AD-5's [fix] writes, header name to `USER_ENTERED` value: only ID, Source and SMS ID,
+   * and only those the fix names.
+   */
+  fun cells(fix: ExpenseRowFix): Map<String, String> =
+    buildMap {
+      fix.id?.let { put(ID, asText(it)) }
+      if (fix.sourceUser) put(SOURCE, ExpenseSource.User.name)
+      if (fix.clearSmsId) put(SMS_ID, "")
+    }
 
   /**
    * The cells to write for [expense], header name to `USER_ENTERED` value. Source is included only

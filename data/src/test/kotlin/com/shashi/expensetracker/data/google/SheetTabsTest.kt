@@ -73,12 +73,12 @@ class SheetTabsTest {
     val row = result.rows.single()
     assertEquals(2, row.row)
     assertEquals("0f8fad5b-d9cb-469f-a165-70867728950e", row.value.id)
-    assertEquals(25_075L, row.value.amountPaise)
+    assertEquals(25_075L, row.value.expense?.amountPaise)
     assertEquals(0, result.skipped)
   }
 
   @Test
-  fun `readExpenses keeps sheet row numbers past blank rows and counts invalid rows but not blank IDs`() = runTest {
+  fun `readExpenses keeps sheet row numbers past blank rows, keeps blank IDs and counts invalid rows`() = runTest {
     server.enqueue(
       json(
         """{"range":"Expenses!A1:G6","values":[$expensesHeader,
@@ -89,8 +89,11 @@ class SheetTabsTest {
 
     val result = gateway.readExpenses("sheet-1") as TabReadResult.Rows
 
-    assertEquals(listOf(2 to "a", 5 to "b"), result.rows.map { it.row to it.value.id })
-    assertEquals(120_000L, result.rows[1].value.amountPaise)
+    assertEquals(listOf(2 to "a", 4 to null, 5 to "b", 6 to "c"), result.rows.map { it.row to it.value.id })
+    assertEquals(500L, result.rows[1].value.expense?.amountPaise)
+    assertEquals("", result.rows[1].value.expense?.id)
+    assertEquals(120_000L, result.rows[2].value.expense?.amountPaise)
+    assertEquals(null, result.rows[3].value.expense)
     assertEquals(1, result.skipped)
   }
 

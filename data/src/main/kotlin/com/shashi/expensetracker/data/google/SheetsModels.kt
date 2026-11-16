@@ -22,8 +22,26 @@ data class SheetProperties(val sheetId: Int? = null, val title: String? = null)
 @JsonClass(generateAdapter = true)
 data class BatchUpdateSpreadsheetRequest(val requests: List<SpreadsheetRequest>)
 
-/** One `spreadsheets.batchUpdate` request; only `addSheet` is used. */
-@JsonClass(generateAdapter = true) data class SpreadsheetRequest(val addSheet: AddSheetRequest? = null)
+/** One `spreadsheets.batchUpdate` request; set exactly one field. */
+@JsonClass(generateAdapter = true)
+data class SpreadsheetRequest(
+  val addSheet: AddSheetRequest? = null,
+  val deleteDimension: DeleteDimensionRequest? = null,
+)
+
+/** Deletes the rows or columns in [range]; the ones after it move up or left. */
+@JsonClass(generateAdapter = true) data class DeleteDimensionRequest(val range: DimensionRange)
+
+/**
+ * A span of one tab's rows or columns: [sheetId] is the tab's numeric ID, [startIndex] is 0-based
+ * and [endIndex] exclusive, so Sheet row `n` is `startIndex = n - 1, endIndex = n`.
+ */
+@JsonClass(generateAdapter = true)
+data class DimensionRange(val sheetId: Int, val dimension: String, val startIndex: Int, val endIndex: Int) {
+  companion object {
+    const val ROWS = "ROWS"
+  }
+}
 
 /** Adds a tab with [properties] (its title). */
 @JsonClass(generateAdapter = true) data class AddSheetRequest(val properties: SheetProperties)

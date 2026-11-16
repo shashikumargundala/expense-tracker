@@ -10,8 +10,9 @@ data class SheetRow<out T>(val row: Int, val value: T)
  */
 sealed interface TabReadResult<out T> {
   /**
-   * The tab's valid rows under its header. [skipped] counts rows that couldn't be read (for example
-   * a blank ID or an unreadable amount); they are left untouched in the Sheet (AD-7).
+   * The tab's rows under its header. [skipped] counts invalid rows, such as a row with an
+   * unreadable amount; they are left untouched in the Sheet (AD-7). A row with a blank key isn't
+   * counted.
    */
   data class Rows<T>(val rows: List<SheetRow<T>>, val skipped: Int = 0) : TabReadResult<T>
 

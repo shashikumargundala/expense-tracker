@@ -17,7 +17,7 @@ internal sealed interface ParsedRow<out T> {
   /** The row has its key but a missing or unreadable mapped value; it is skipped and counted (AD-7). */
   data object Invalid : ParsedRow<Nothing>
 
-  /** The row's key is blank; it is left out and not counted (entry 3 repairs blank IDs). */
+  /** The row's key is blank; it is left out and not counted. Expenses rows never use this (AD-5). */
   data object Unkeyed : ParsedRow<Nothing>
 }
 
