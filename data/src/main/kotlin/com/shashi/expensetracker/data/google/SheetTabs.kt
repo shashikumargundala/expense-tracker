@@ -1,5 +1,7 @@
 package com.shashi.expensetracker.data.google
 
+import com.shashi.expensetracker.domain.account.ExpenseRowFix
+import com.shashi.expensetracker.domain.account.ExpenseRowRead
 import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
 import com.shashi.expensetracker.domain.account.RowWriteResult
 import com.shashi.expensetracker.domain.account.SheetRow
@@ -18,8 +20,17 @@ import com.shashi.expensetracker.domain.settings.Setting
  */
 internal class SheetTabs(private val sheets: SheetsService) {
 
-  suspend fun readExpenses(sheetId: String): TabReadResult<Expense> =
-    readTab(sheetId, ExpenseSheetLayout.EXPENSES, ExpenseRowMapping.requiredHeaders, ExpenseRowMapping::expense)
+  /** Every non-blank Expenses row, blank IDs and invalid rows included; invalid rows are counted. */
+  suspend fun readExpenses(sheetId: String): TabReadResult<ExpenseRowRead> =
+    when (
+      val read =
+        readTab(sheetId, ExpenseSheetLayout.EXPENSES, ExpenseRowMapping.requiredHeaders) { row, columns ->
+          ParsedRow.Valid(ExpenseRowMapping.row(row, columns))
+        }
+    ) {
+      is TabReadResult.Rows -> read.copy(skipped = read.rows.count { it.value.expense == null })
+      else -> read
+    }
 
   suspend fun readCategories(sheetId: String): TabReadResult<Category> =
     readTab(sheetId, ExpenseSheetLayout.CATEGORIES, CategoryRowMapping.requiredHeaders, CategoryRowMapping::category)
@@ -67,6 +78,69 @@ internal class SheetTabs(private val sheets: SheetsService) {
         is HeaderRead.Columns -> header.columns
       }
     return appendRows(sheetId, tab, categories.map { mapped(columns, CategoryRowMapping.cells(it)) })
+  }
+
+  /**
+   * Writes the ID, Source and SMS ID cells that [fixes] name with one `USER_ENTERED`
+   * `values.batchUpdate`. A cell under a header the tab lacks is dropped.
+   */
+  suspend fun writeExpenseRepairs(sheetId: String, fixes: List<ExpenseRowFix>): RowWriteResult {
+    if (fixes.isEmpty()) return RowWriteResult.Written(null)
+    val tab = ExpenseSheetLayout.EXPENSES
+    val columns =
+      when (val header = headerColumns(sheetId, tab, ExpenseRowMapping.requiredHeaders)) {
+        is HeaderRead.Failed -> return header.result
+        is HeaderRead.Columns -> header.columns
+      }
+    val data =
+      fixes.flatMap { fix ->
+        mapped(columns, ExpenseRowMapping.cells(fix)).map { (column, value) ->
+          ValueRange(range = "$tab!${SheetValues.columnLetter(column)}${fix.row}", values = listOf(listOf(value)))
+        }
+      }
+    if (data.isEmpty()) return RowWriteResult.Written(null)
+    val request = BatchUpdateValuesRequest(valueInputOption = BatchUpdateValuesRequest.USER_ENTERED, data = data)
+    return when (val r = googleApiCall { sheets.batchUpdateValues(sheetId, request) }) {
+      is ApiResult.Failure -> r.reason.toWriteResult()
+      is ApiResult.Success -> RowWriteResult.Written(null)
+    }
+  }
+
+  /**
+   * Deletes the Expenses [rows] with one `spreadsheets.batchUpdate` of `deleteDimension` requests,
+   * highest row first, after looking up the tab's numeric ID with `spreadsheets.get`.
+   */
+  suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult {
+    if (rows.isEmpty()) return RowWriteResult.Written(null)
+    val tabId =
+      when (val r = googleApiCall { sheets.getSpreadsheet(sheetId, TAB_IDS) }) {
+        is ApiResult.Failure -> return r.reason.toWriteResult()
+        is ApiResult.Success ->
+          r.value.sheets.orEmpty().firstOrNull { it.properties?.title.equals(ExpenseSheetLayout.EXPENSES, ignoreCase = true) }
+            ?.properties?.sheetId
+      } ?: return RowWriteResult.Failure(ExpenseSheetFailure.Unexpected)
+    val requests =
+      rows.distinct().sortedDescending().map { row ->
+        SpreadsheetRequest(
+          deleteDimension = DeleteDimensionRequest(DimensionRange(tabId, DimensionRange.ROWS, startIndex = row - 1, endIndex = row))
+        )
+      }
+    return when (val r = googleApiCall { sheets.batchUpdate(sheetId, BatchUpdateSpreadsheetRequest(requests)) }) {
+      is ApiResult.Failure -> r.reason.toWriteResult()
+      is ApiResult.Success -> RowWriteResult.Written(null)
+    }
+  }
+
+  /** Appends [dismissals] as rows of the Dismissed tab with one `values.append`, SMS ID and Dismissed On only. */
+  suspend fun appendDismissals(sheetId: String, dismissals: List<Dismissal>): RowWriteResult {
+    if (dismissals.isEmpty()) return RowWriteResult.Written(null)
+    val tab = ExpenseSheetLayout.DISMISSED
+    val columns =
+      when (val header = headerColumns(sheetId, tab, DismissalRowMapping.requiredHeaders)) {
+        is HeaderRead.Failed -> return header.result
+        is HeaderRead.Columns -> header.columns
+      }
+    return appendRows(sheetId, tab, dismissals.map { mapped(columns, DismissalRowMapping.cells(it)) })
   }
 
   /** [cells] (header name to value) as (column, value) pairs, dropping headers the tab lacks. */
@@ -118,7 +192,7 @@ internal class SheetTabs(private val sheets: SheetsService) {
    * Reads all of [tab]. Row 1 is the header and must have every name in [required]; sync repairs
    * the layout first, so a header still missing fails the read and no mirror is refreshed from a tab
    * it can't understand. Blank rows and rows with a blank key are left out; rows [parse] finds
-   * invalid are left out and counted as skipped.
+   * invalid are left out and counted as skipped. Expenses keeps both ([readExpenses]).
    */
   private suspend fun <T> readTab(
     sheetId: String,
@@ -161,5 +235,8 @@ internal class SheetTabs(private val sheets: SheetsService) {
 
   private companion object {
     const val INSERT_ROWS = "INSERT_ROWS"
+
+    /** `spreadsheets.get` fields for each tab's numeric ID and title. */
+    const val TAB_IDS = "sheets.properties(sheetId,title)"
   }
 }

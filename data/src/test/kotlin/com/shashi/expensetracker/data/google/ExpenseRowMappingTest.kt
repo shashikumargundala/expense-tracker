@@ -1,10 +1,14 @@
 package com.shashi.expensetracker.data.google
 
+import com.shashi.expensetracker.domain.account.ExpenseRowFix
+import com.shashi.expensetracker.domain.account.ExpenseRowRead
 import com.shashi.expensetracker.domain.expense.Expense
 import com.shashi.expensetracker.domain.expense.ExpenseSource
 import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ExpenseRowMappingTest {
@@ -13,7 +17,7 @@ class ExpenseRowMappingTest {
   private val columns = SheetValues.columns(header)
 
   private fun read(row: List<Any?>, columns: Map<String, Int> = this.columns): Expense =
-    (ExpenseRowMapping.expense(row, columns) as ParsedRow.Valid).value
+    checkNotNull(ExpenseRowMapping.row(row, columns).expense)
 
   @Test
   fun `a recorded row reads with serial date and decimal amount`() {
@@ -62,18 +66,25 @@ class ExpenseRowMappingTest {
   @Test
   fun `a row with an ID but a missing or unreadable Date, Amount or Category is invalid`() {
     val valid = listOf<Any?>("id-1", 46339.0, 10, "Food", "", "", "")
+    val invalid = ExpenseRowRead(id = "id-1", expense = null, sourceBlank = true)
     listOf(1, 2, 3).forEach { blank ->
       val row = valid.toMutableList().also { it[blank] = "" }
-      assertEquals("blank column $blank", ParsedRow.Invalid, ExpenseRowMapping.expense(row, columns))
+      assertEquals("blank column $blank", invalid, ExpenseRowMapping.row(row, columns))
     }
-    assertEquals(ParsedRow.Invalid, ExpenseRowMapping.expense(valid.toMutableList().also { it[2] = "abc" }, columns))
-    assertEquals(ParsedRow.Invalid, ExpenseRowMapping.expense(valid.toMutableList().also { it[1] = "someday" }, columns))
-    assertEquals(ParsedRow.Invalid, ExpenseRowMapping.expense(listOf("id-1", 46339.0), columns))
+    assertEquals(invalid, ExpenseRowMapping.row(valid.toMutableList().also { it[2] = "abc" }, columns))
+    assertEquals(invalid, ExpenseRowMapping.row(valid.toMutableList().also { it[1] = "someday" }, columns))
+    assertEquals(invalid, ExpenseRowMapping.row(listOf("id-1", 46339.0), columns))
   }
 
   @Test
-  fun `a row with a blank ID is unkeyed, not invalid`() {
-    assertEquals(ParsedRow.Unkeyed, ExpenseRowMapping.expense(listOf("  ", 46339.0, 10, "Food"), columns))
+  fun `a row with a blank ID still parses, with a null ID and an empty Expense ID`() {
+    val read = ExpenseRowMapping.row(listOf("  ", 46339.0, 10, "Food", "", "App"), columns)
+
+    assertNull(read.id)
+    assertEquals("", read.expense?.id)
+    assertEquals(1_000L, read.expense?.amountPaise)
+    assertFalse(read.sourceBlank)
+    assertEquals(ExpenseRowRead(null, null, sourceBlank = true), ExpenseRowMapping.row(listOf("", "", 10, "Food"), columns))
   }
 
   @Test
@@ -82,6 +93,8 @@ class ExpenseRowMappingTest {
 
     val expense = read(row)
 
+    assertTrue(ExpenseRowMapping.row(row, columns).sourceBlank)
+    assertFalse(ExpenseRowMapping.row(row.toMutableList().also { it[5] = "Bank" }, columns).sourceBlank)
     assertEquals(ExpenseSource.User, expense.source)
     assertEquals("12", expense.description)
     assertEquals("ref:hdfc:1:1000", expense.smsId)
@@ -102,5 +115,15 @@ class ExpenseRowMappingTest {
     assertEquals("", created["SMS ID"])
 
     assertFalse("Source" in ExpenseRowMapping.cells(expense, withSource = false))
+  }
+
+  @Test
+  fun `a repair fix writes only the ID, Source and SMS ID cells it names`() {
+    assertEquals(
+      mapOf("ID" to "'new-id", "Source" to "User", "SMS ID" to ""),
+      ExpenseRowMapping.cells(ExpenseRowFix(row = 4, id = "new-id", sourceUser = true, clearSmsId = true)),
+    )
+    assertEquals(mapOf("Source" to "User"), ExpenseRowMapping.cells(ExpenseRowFix(row = 4, sourceUser = true)))
+    assertEquals(emptyMap<String, String>(), ExpenseRowMapping.cells(ExpenseRowFix(row = 4)))
   }
 }

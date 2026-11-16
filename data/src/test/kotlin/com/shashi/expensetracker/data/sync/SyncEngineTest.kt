@@ -13,6 +13,7 @@ import com.shashi.expensetracker.data.sampleExpense
 import com.shashi.expensetracker.data.settings.toDomain
 import com.shashi.expensetracker.data.testClock
 import com.shashi.expensetracker.domain.account.ConsentRequest
+import com.shashi.expensetracker.domain.account.ExpenseRowRead
 import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
 import com.shashi.expensetracker.domain.account.ExpenseSheetGateway
 import com.shashi.expensetracker.domain.account.FakeExpenseSheetGateway
@@ -56,7 +57,7 @@ class SyncEngineTest {
   }
 
   private fun newEngine(gateway: ExpenseSheetGateway = sheet) =
-    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh())
+    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
 
   @After fun tearDown() = db.close()
 
@@ -321,7 +322,7 @@ class SyncEngineTest {
 
   @Test
   fun `invalid rows are counted across every tab`() = runTest {
-    sheet.readExpensesResult = TabReadResult.Rows(listOf(SheetRow(2, sampleExpense(id = "ok"))), skipped = 2)
+    sheet.readExpensesResult = TabReadResult.Rows(listOf(SheetRow(2, ExpenseRowRead("ok", sampleExpense(id = "ok")))), skipped = 2)
     sheet.readBudgetsResult = TabReadResult.Rows(emptyList(), skipped = 1)
     sheet.readCategoriesResult = TabReadResult.Rows(listOf(SheetRow(2, Category("Food", "", ""))), skipped = 0)
     sheet.readDismissalsResult = TabReadResult.Rows(emptyList(), skipped = 3)

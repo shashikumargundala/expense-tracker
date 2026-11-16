@@ -43,28 +43,33 @@ interface ExpenseSheetGateway {
 
   /**
    * Reads the Expenses tab of [sheetId] fresh. Columns are found by header name, trimmed and
-   * case-insensitive, never by position (AD-7). A row with a blank ID is left out and not counted
-   * (it's repaired elsewhere); a row with an ID but a missing or unreadable Date, Amount or Category
-   * is left out and counted in [TabReadResult.Rows.skipped]. Sync calls [repairLayout] first, so a
-   * required header still missing here is an [ExpenseSheetFailure.Unexpected] failure and no mirror
-   * is refreshed from the tab. Returns [TabReadResult.SheetMissing] if the Sheet is gone.
+   * case-insensitive, never by position (AD-7). Every non-blank row is returned as an
+   * [ExpenseRowRead], including rows with a blank ID (for AD-5's repair) and invalid rows (a
+   * missing or unreadable Date, Amount or Category), which are also counted in
+   * [TabReadResult.Rows.skipped]. Sync calls [repairLayout] first, so a required header still
+   * missing here is an [ExpenseSheetFailure.Unexpected] failure and no mirror is refreshed from the
+   * tab. Returns [TabReadResult.SheetMissing] if the Sheet is gone.
    */
-  suspend fun readExpenses(sheetId: String): TabReadResult<Expense>
+  suspend fun readExpenses(sheetId: String): TabReadResult<ExpenseRowRead>
 
-  /** Reads the Categories tab of [sheetId] fresh, as [readExpenses] does. The key is Name. */
+  /**
+   * Reads the Categories tab of [sheetId] fresh, as [readExpenses] does, except that only valid
+   * rows are returned: a row with a blank key is left out uncounted, and an invalid row is left out
+   * and counted. The key is Name.
+   */
   suspend fun readCategories(sheetId: String): TabReadResult<Category>
 
   /**
-   * Reads the Budgets tab of [sheetId] fresh, as [readExpenses] does. A row needs a Month (`yyyy-MM`
+   * Reads the Budgets tab of [sheetId] fresh, as [readCategories] does. A row needs a Month (`yyyy-MM`
    * text or a date), a Category and an Amount above zero; a row with neither Month nor Category is
    * left out uncounted.
    */
   suspend fun readBudgets(sheetId: String): TabReadResult<Budget>
 
-  /** Reads the Dismissed tab of [sheetId] fresh, as [readExpenses] does. The key is SMS ID. */
+  /** Reads the Dismissed tab of [sheetId] fresh, as [readCategories] does. The key is SMS ID. */
   suspend fun readDismissals(sheetId: String): TabReadResult<Dismissal>
 
-  /** Reads the Settings tab of [sheetId] fresh, as [readExpenses] does. The key is Key. */
+  /** Reads the Settings tab of [sheetId] fresh, as [readCategories] does. The key is Key. */
   suspend fun readSettings(sheetId: String): TabReadResult<Setting>
 
   /**
@@ -81,4 +86,25 @@ interface ExpenseSheetGateway {
    * Unknown columns are never touched.
    */
   suspend fun writeExpense(sheetId: String, expense: Expense, existingRow: Int?): RowWriteResult
+
+  /**
+   * Writes AD-5's [fixes] to the Expenses tab of [sheetId] with one write: only the ID, Source and
+   * SMS ID cells each fix names, under the tab's current header. Each row is from this run's read.
+   * Sends nothing for no fixes.
+   */
+  suspend fun writeExpenseRepairs(sheetId: String, fixes: List<ExpenseRowFix>): RowWriteResult
+
+  /**
+   * Deletes the 1-based [rows] of the Expenses tab of [sheetId] (from this run's read) in one
+   * request, bottom-up, so no delete shifts a row still to be deleted. Only AD-5's retry
+   * duplicates are deleted. Sends nothing for no rows.
+   */
+  suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult
+
+  /**
+   * Appends [dismissals] to the Dismissed tab of [sheetId], in order, one row each, only in the
+   * SMS ID and Dismissed On columns (AD-13). Unknown columns are never touched. Sends nothing for
+   * no dismissals.
+   */
+  suspend fun appendDismissals(sheetId: String, dismissals: List<Dismissal>): RowWriteResult
 }

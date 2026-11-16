@@ -86,7 +86,7 @@ class EnsureExpenseSheetUseCaseTest {
 
     override suspend fun check(sheetId: String): ExpenseSheetResult = error("not used")
 
-    override suspend fun readExpenses(sheetId: String): TabReadResult<Expense> = error("not used")
+    override suspend fun readExpenses(sheetId: String): TabReadResult<ExpenseRowRead> = error("not used")
 
     override suspend fun readCategories(sheetId: String): TabReadResult<Category> = error("not used")
 
@@ -102,6 +102,14 @@ class EnsureExpenseSheetUseCaseTest {
       error("not used")
 
     override suspend fun writeExpense(sheetId: String, expense: Expense, existingRow: Int?): RowWriteResult =
+      error("not used")
+
+    override suspend fun writeExpenseRepairs(sheetId: String, fixes: List<ExpenseRowFix>): RowWriteResult =
+      error("not used")
+
+    override suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult = error("not used")
+
+    override suspend fun appendDismissals(sheetId: String, dismissals: List<Dismissal>): RowWriteResult =
       error("not used")
   }
 

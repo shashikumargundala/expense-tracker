@@ -12,7 +12,7 @@ import com.shashi.expensetracker.domain.account.FakeExpenseSheetGateway
 import com.shashi.expensetracker.domain.account.Session
 import com.shashi.expensetracker.domain.account.SessionRepository
 import com.shashi.expensetracker.domain.account.TabReadResult
-import com.shashi.expensetracker.domain.expense.Expense
+import com.shashi.expensetracker.domain.account.ExpenseRowRead
 import com.shashi.expensetracker.domain.sync.SyncState
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -44,7 +44,7 @@ class SyncCoordinatorTest {
     val gate = CompletableDeferred<Unit>()
     val entered = CompletableDeferred<Unit>()
 
-    override suspend fun readExpenses(sheetId: String): TabReadResult<Expense> {
+    override suspend fun readExpenses(sheetId: String): TabReadResult<ExpenseRowRead> {
       entered.complete(Unit)
       gate.await()
       return sheet.readExpenses(sheetId)
@@ -60,7 +60,7 @@ class SyncCoordinatorTest {
   @After fun tearDown() = db.close()
 
   private fun engine(gateway: ExpenseSheetGateway) =
-    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh())
+    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
 
   @Test
   fun `a run syncs the stored session's Sheet`() = runTest {

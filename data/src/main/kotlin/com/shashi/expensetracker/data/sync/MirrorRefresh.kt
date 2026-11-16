@@ -25,9 +25,14 @@ import com.shashi.expensetracker.domain.inbox.Dismissal
 import com.shashi.expensetracker.domain.settings.Setting
 import javax.inject.Inject
 
-/** One successful read of all five tabs, each in sheet order, as the mirror should hold it. */
+/**
+ * One successful read of all five tabs, each in sheet order, as the mirror should hold it.
+ * [invalidExpenseIds] are the IDs of invalid Expenses rows (AD-7): still in the Sheet, so their
+ * mirror rows are kept as they are.
+ */
 data class SheetContents(
   val expenses: List<Expense> = emptyList(),
+  val invalidExpenseIds: Set<String> = emptySet(),
   val categories: List<Category> = emptyList(),
   val budgets: List<Budget> = emptyList(),
   val dismissals: List<Dismissal> = emptyList(),
@@ -69,6 +74,7 @@ constructor(
         current = expenses.getAll().map { it.toDomain() },
         upsert = { rows -> expenses.upsertAll(rows.map { it.toEntity() }) },
         delete = { rows -> rows.map { it.id }.chunked(MAX_ARGS).forEach { expenses.deleteByIds(it) } },
+        keep = sheet.invalidExpenseIds,
       )
       diff(
         sheet = sheet.categories,
@@ -108,7 +114,8 @@ constructor(
 
   /**
    * Upserts the rows of [sheet] that are new or differ from [current], and deletes the rows of
-   * [current] whose key is no longer in [sheet], skipping every key in [pending] both ways.
+   * [current] whose key is no longer in [sheet], skipping every key in [pending] both ways and every
+   * key in [keep] (rows still in the Sheet but unreadable) when deleting.
    */
   private suspend fun <T, K> diff(
     sheet: List<T>,
@@ -117,13 +124,14 @@ constructor(
     current: List<T>,
     upsert: suspend (List<T>) -> Unit,
     delete: suspend (List<T>) -> Unit,
+    keep: Set<K> = emptySet(),
   ) {
     val pulled = sheet.distinctBy(key)
     val byKey = current.associateBy(key)
     val changed = pulled.filter { key(it) !in pending && byKey[key(it)] != it }
     if (changed.isNotEmpty()) upsert(changed)
     val inSheet = pulled.mapTo(HashSet(), key)
-    val missing = byKey.filterKeys { it !in inSheet && it !in pending }.values.toList()
+    val missing = byKey.filterKeys { it !in inSheet && it !in pending && it !in keep }.values.toList()
     if (missing.isNotEmpty()) delete(missing)
   }
 
