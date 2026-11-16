@@ -4,7 +4,7 @@ package com.shashi.expensetracker.data.sync
 sealed interface SyncResult {
   /**
    * Every entry this engine applies was pushed and the mirror was refreshed. [pushed] counts the
-   * confirmed writes; [skipped] counts Sheet rows that couldn't be read (AD-7).
+   * confirmed writes; [skipped] counts invalid Sheet rows across all five tabs (AD-7).
    */
   data class Synced(val pushed: Int, val skipped: Int) : SyncResult
 

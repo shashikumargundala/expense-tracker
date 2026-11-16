@@ -2,31 +2,44 @@ package com.shashi.expensetracker.data.sync
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shashi.expensetracker.data.account.AppDatabase
+import com.shashi.expensetracker.data.budget.toDomain
 import com.shashi.expensetracker.data.category.CategoryEntity
 import com.shashi.expensetracker.data.expense.RoomExpenseRepository
 import com.shashi.expensetracker.data.expense.toDomain
-import com.shashi.expensetracker.data.expense.toEntity
 import com.shashi.expensetracker.data.inMemoryDatabase
+import com.shashi.expensetracker.data.inbox.toDomain
+import com.shashi.expensetracker.data.mirrorRefresh
 import com.shashi.expensetracker.data.sampleExpense
+import com.shashi.expensetracker.data.settings.toDomain
 import com.shashi.expensetracker.data.testClock
 import com.shashi.expensetracker.domain.account.ConsentRequest
 import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
+import com.shashi.expensetracker.domain.account.ExpenseSheetGateway
 import com.shashi.expensetracker.domain.account.FakeExpenseSheetGateway
 import com.shashi.expensetracker.domain.account.RowWriteResult
+import com.shashi.expensetracker.domain.account.SheetRow
 import com.shashi.expensetracker.domain.account.TabReadResult
+import com.shashi.expensetracker.domain.budget.Budget
 import com.shashi.expensetracker.domain.category.Category
 import com.shashi.expensetracker.domain.expense.ExpenseSource
+import com.shashi.expensetracker.domain.inbox.Dismissal
+import com.shashi.expensetracker.domain.settings.Setting
 import java.time.LocalDateTime
+import java.time.YearMonth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The tracer sync against [FakeExpenseSheetGateway] and a real in-memory mirror (the I/O matrix). */
+/**
+ * A sync run against [FakeExpenseSheetGateway] and a real in-memory mirror: the push, the run order
+ * and the pull matrix. The refresh's own diff cases are [MirrorRefreshTest]'s.
+ */
 @RunWith(AndroidJUnit4::class)
 class SyncEngineTest {
 
@@ -42,8 +55,8 @@ class SyncEngineTest {
     engine = newEngine()
   }
 
-  private fun newEngine(gateway: com.shashi.expensetracker.domain.account.ExpenseSheetGateway = sheet) =
-    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), MirrorRefresh(db, db.expenseDao(), db.categoryDao(), db.outboxDao()))
+  private fun newEngine(gateway: ExpenseSheetGateway = sheet) =
+    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh())
 
   @After fun tearDown() = db.close()
 
@@ -170,60 +183,12 @@ class SyncEngineTest {
   }
 
   @Test
-  fun `the refresh upserts pulled Expenses and Categories and deletes missing rows unless pending`() = runTest {
-    val handTyped = sampleExpense(id = "hand").copy(source = ExpenseSource.User, description = "Auto")
-    val edited = sampleExpense(id = "edited")
-    val gone = sampleExpense(id = "gone")
-    db.expenseDao().upsertAll(listOf(edited.copy(amountPaise = 1).toEntity(), gone.toEntity()))
-    db.categoryDao().upsertAll(listOf(CategoryEntity("food", "#000000", ""), CategoryEntity("Old", "", "")))
-    sheet.expenses += handTyped
-    sheet.expenses += edited
-    sheet.categories += Category("Food", "#F59E0B", "restaurant")
-    sheet.categories += Category("Fun", "#A855F7", "celebration")
-    // Pushed during this run, so the re-read before the refresh has it.
-    val unsynced = sampleExpense(id = "unsynced")
-    repository.add(unsynced)
-    db.outboxDao().insert(OutboxEntity(type = OutboxType.UpsertCategory, rowKey = "Old", base = null, createdAt = LocalDateTime.MIN))
-
-    // UpsertCategory isn't applied by this tracer, so only the Expense is pushed.
-    assertEquals(SyncResult.Synced(pushed = 1, skipped = 0), engine.sync("sheet-1"))
-
-    assertEquals(
-      setOf(handTyped, edited, unsynced),
-      db.expenseDao().getAll().map { it.toDomain() }.toSet(),
-    )
-    assertEquals(
-      setOf(CategoryEntity("Food", "#F59E0B", "restaurant"), CategoryEntity("Fun", "#A855F7", "celebration"), CategoryEntity("Old", "", "")),
-      db.categoryDao().getAll().toSet(),
-    )
-    assertEquals(listOf(OutboxType.UpsertCategory), db.outboxDao().getAll().map { it.type })
-  }
-
-  @Test
-  fun `the refresh leaves a row with a pending entry as it is locally`() = runTest {
-    // DeleteExpense isn't applied by this tracer, so its entry stays pending through the refresh.
-    val local = sampleExpense(id = "mine", amountPaise = 500)
-    db.expenseDao().upsert(local.toEntity())
-    db.outboxDao().insert(OutboxEntity(type = OutboxType.DeleteExpense, rowKey = "mine", base = null, createdAt = LocalDateTime.MIN))
-    val localOnly = sampleExpense(id = "local-only")
-    db.expenseDao().upsert(localOnly.toEntity())
-    db.outboxDao().insert(OutboxEntity(type = OutboxType.DeleteExpense, rowKey = "local-only", base = null, createdAt = LocalDateTime.MIN))
-    sheet.expenses += local.copy(amountPaise = 999)
-
-    assertEquals(SyncResult.Synced(pushed = 0, skipped = 0), engine.sync("sheet-1"))
-
-    assertEquals(500L, db.expenseDao().get("mine")?.amountPaise)
-    assertEquals(localOnly, db.expenseDao().get("local-only")?.toDomain())
-    assertTrue(sheet.writes.isEmpty())
-  }
-
-  @Test
   fun `an append that doesn't report its row re-reads before the next entry for that ID`() = runTest {
     val expense = sampleExpense(id = "twice")
     repository.add(expense)
     repository.add(expense.copy(amountPaise = 300))
     val gateway =
-      object : com.shashi.expensetracker.domain.account.ExpenseSheetGateway by sheet {
+      object : ExpenseSheetGateway by sheet {
         override suspend fun writeExpense(sheetId: String, expense: com.shashi.expensetracker.domain.expense.Expense, existingRow: Int?) =
           sheet.writeExpense(sheetId, expense, existingRow).let { if (existingRow == null) RowWriteResult.Written(null) else it }
       }
@@ -242,5 +207,147 @@ class SyncEngineTest {
 
     assertEquals(listOf("pulled"), db.expenseDao().getAll().map { it.id })
     assertEquals(1, sheet.readExpensesCalls)
+  }
+
+  private val october = YearMonth.of(2026, 10)
+  private val on = LocalDateTime.of(2026, 11, 13, 9, 30)
+
+  private suspend fun mirrorBudgets() = db.budgetDao().getAll().map { it.toDomain() }
+
+  @Test
+  fun `a new phone pulls every tab into the empty mirror after repairing the layout`() = runTest {
+    val expense = sampleExpense(id = "a").copy(source = ExpenseSource.User)
+    sheet.expenses += expense
+    sheet.categories += Category("Food", "#F59E0B", "restaurant")
+    sheet.budgets += Budget(october, "Food", 500_000)
+    sheet.dismissals += Dismissal("h:abc", on)
+    sheet.settings += Setting("Currency", "INR")
+
+    assertEquals(SyncResult.Synced(pushed = 0, skipped = 0), engine.sync("sheet-1"))
+
+    assertEquals(1, sheet.repairCalls)
+    assertEquals(listOf(expense), db.expenseDao().getAll().map { it.toDomain() })
+    assertEquals(listOf(CategoryEntity("Food", "#F59E0B", "restaurant")), db.categoryDao().getAll())
+    assertEquals(listOf(Budget(october, "Food", 500_000)), mirrorBudgets())
+    assertEquals(listOf(Dismissal("h:abc", on)), db.dismissalDao().getAll().map { it.toDomain() })
+    assertEquals(listOf(Setting("Currency", "INR")), db.settingDao().getAll().map { it.toDomain() })
+    assertTrue(sheet.appendedCategories.isEmpty())
+  }
+
+  @Test
+  fun `an Expense or Budget takes its Category's own spelling in the mirror`() = runTest {
+    sheet.expenses += sampleExpense(id = "hand").copy(category = "food", source = ExpenseSource.User)
+    sheet.categories += Category("Food", "#F59E0B", "restaurant")
+    sheet.budgets += Budget(october, "FOOD", 500_000)
+
+    engine.sync("sheet-1")
+
+    assertEquals("Food", db.expenseDao().get("hand")?.category)
+    assertEquals(listOf(Budget(october, "Food", 500_000)), mirrorBudgets())
+    assertTrue(sheet.appendedCategories.isEmpty())
+  }
+
+  @Test
+  fun `an unknown Category is appended to Categories once, then mirrored`() = runTest {
+    sheet.categories += Category("Food", "#F59E0B", "restaurant")
+    sheet.expenses += sampleExpense(id = "a").copy(category = "Pets")
+    sheet.expenses += sampleExpense(id = "b").copy(category = "pets")
+    sheet.budgets += Budget(october, "Gym", 100_000)
+
+    engine.sync("sheet-1")
+
+    val added = listOf(Category("Pets", "#10B981", "category"), Category("Gym", "#E11D48", "category"))
+    assertEquals(added, sheet.appendedCategories)
+    assertEquals(
+      setOf(CategoryEntity("Food", "#F59E0B", "restaurant")) + added.map { CategoryEntity(it.name, it.color, it.icon) },
+      db.categoryDao().getAll().toSet(),
+    )
+    assertEquals(listOf("Pets"), db.expenseDao().getAll().map { it.category }.distinct())
+  }
+
+  @Test
+  fun `a failed Category append fails the run with no refresh`() = runTest {
+    sheet.expenses += sampleExpense(id = "a").copy(category = "Pets")
+    sheet.appendCategoriesResult = RowWriteResult.Failure(ExpenseSheetFailure.Network)
+
+    assertEquals(SyncResult.Failed(SyncFailure.Network), engine.sync("sheet-1"))
+
+    assertTrue(db.expenseDao().getAll().isEmpty())
+    assertTrue(db.categoryDao().getAll().isEmpty())
+  }
+
+  @Test
+  fun `a failed repair stops the run before any read, write or refresh`() = runTest {
+    repository.add(sampleExpense(id = "kept"))
+    sheet.expenses += sampleExpense(id = "pulled")
+    val failures =
+      listOf(
+        RowWriteResult.Failure(ExpenseSheetFailure.Network) to SyncFailure.Network,
+        RowWriteResult.NeedsConsent(object : ConsentRequest {}) to SyncFailure.NeedsConsent,
+        RowWriteResult.SheetMissing to SyncFailure.SheetMissing,
+      )
+
+    failures.forEach { (repair, failure) ->
+      sheet.repairResult = repair
+      assertEquals(SyncResult.Failed(failure), engine.sync("sheet-1"))
+    }
+
+    assertEquals(0, sheet.readExpensesCalls)
+    assertTrue(sheet.writes.isEmpty())
+    assertEquals(listOf("kept"), db.expenseDao().getAll().map { it.id })
+  }
+
+  @Test
+  fun `a failed read of any tab means no refresh at all`() = runTest {
+    db.categoryDao().upsertAll(listOf(CategoryEntity("Old", "", "")))
+    sheet.expenses += sampleExpense(id = "pulled")
+    sheet.categories += Category("Food", "#F59E0B", "restaurant")
+    val failure = TabReadResult.Failure(ExpenseSheetFailure.Unexpected)
+    val scripts =
+      listOf<FakeExpenseSheetGateway.() -> Unit>(
+        { readBudgetsResult = failure },
+        { readBudgetsResult = null; readDismissalsResult = failure },
+        { readDismissalsResult = null; readSettingsResult = failure },
+      )
+
+    scripts.forEach { script ->
+      sheet.script()
+      assertEquals(SyncResult.Failed(SyncFailure.Unexpected), engine.sync("sheet-1"))
+    }
+
+    assertTrue(db.expenseDao().getAll().isEmpty())
+    assertEquals(listOf("Old"), db.categoryDao().getAll().map { it.name })
+  }
+
+  @Test
+  fun `invalid rows are counted across every tab`() = runTest {
+    sheet.readExpensesResult = TabReadResult.Rows(listOf(SheetRow(2, sampleExpense(id = "ok"))), skipped = 2)
+    sheet.readBudgetsResult = TabReadResult.Rows(emptyList(), skipped = 1)
+    sheet.readCategoriesResult = TabReadResult.Rows(listOf(SheetRow(2, Category("Food", "", ""))), skipped = 0)
+    sheet.readDismissalsResult = TabReadResult.Rows(emptyList(), skipped = 3)
+    sheet.readSettingsResult = TabReadResult.Rows(emptyList(), skipped = 4)
+
+    assertEquals(SyncResult.Synced(pushed = 0, skipped = 10), engine.sync("sheet-1"))
+    assertEquals(listOf("ok"), db.expenseDao().getAll().map { it.id })
+  }
+
+  @Test
+  fun `an Expense saved after the reads, before the refresh, survives and stays pending`() = runTest {
+    sheet.expenses += sampleExpense(id = "pulled").copy(category = "Pets")
+    val late = sampleExpense(id = "late")
+    // The append runs after every read and push, just before the refresh.
+    val gated =
+      object : ExpenseSheetGateway by sheet {
+        override suspend fun appendCategories(sheetId: String, categories: List<Category>): RowWriteResult {
+          repository.add(late)
+          return sheet.appendCategories(sheetId, categories)
+        }
+      }
+
+    assertEquals(SyncResult.Synced(pushed = 0, skipped = 0), newEngine(gated).sync("sheet-1"))
+
+    assertEquals(mapOf("pulled" to false, "late" to true), pending())
+    assertEquals(late, db.expenseDao().get("late")?.toDomain())
+    assertNull(sheet.expenses.firstOrNull { it.id == "late" })
   }
 }

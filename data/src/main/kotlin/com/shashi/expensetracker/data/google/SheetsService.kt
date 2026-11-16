@@ -12,6 +12,20 @@ interface SheetsService {
   @POST("spreadsheets")
   suspend fun createSpreadsheet(@Body spreadsheet: Spreadsheet, @Query("fields") fields: String?): Spreadsheet
 
+  /**
+   * `spreadsheets.get`, without grid data. Sync passes `fields=sheets.properties.title` to list the
+   * tab titles.
+   */
+  @GET("spreadsheets/{spreadsheetId}")
+  suspend fun getSpreadsheet(@Path("spreadsheetId") spreadsheetId: String, @Query("fields") fields: String): Spreadsheet
+
+  /** `spreadsheets.batchUpdate`, for example to add a tab. The response isn't read. */
+  @POST("spreadsheets/{spreadsheetId}:batchUpdate")
+  suspend fun batchUpdate(
+    @Path("spreadsheetId") spreadsheetId: String,
+    @Body request: BatchUpdateSpreadsheetRequest,
+  )
+
   /** `spreadsheets.values.batchUpdate`. The response isn't read. */
   @POST("spreadsheets/{spreadsheetId}/values:batchUpdate")
   suspend fun batchUpdateValues(

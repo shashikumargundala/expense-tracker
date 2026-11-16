@@ -13,21 +13,26 @@ import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * One sync run (AD-4), the only caller of [ExpenseSheetGateway]'s tab reads and writes. This tracer
+ * One sync run (AD-4), the only caller of [ExpenseSheetGateway]'s repair, tab reads and writes. It
  * applies only `UpsertExpense` entries; entries of the other six types stay in the outbox for later
  * stories.
  *
  * 0. Checks the Sheet still exists and isn't trashed: a trashed Sheet still accepts writes, so
  *    without this, entries would be "confirmed" into Drive's trash.
- * 1. Reads the Expenses and Categories tabs fresh.
- * 2. For each `UpsertExpense` entry in order, finds the row by its ID in that read, never by a
+ * 1. Repairs the layout: adds any missing tab or header (AD-7).
+ * 2. Reads all five tabs fresh.
+ * 3. For each `UpsertExpense` entry in order, finds the row by its ID in that read, never by a
  *    stored row index, and writes the Expense's mapped cells: an update in place when the ID is
  *    already a row (a retry), otherwise an append. The entry leaves the outbox only after the API
  *    confirms the write. The base is "absent" for every entry today, so there is no base check yet.
- * 3. Re-reads Expenses when anything was written, then refreshes the mirror ([MirrorRefresh]).
+ * 4. Re-reads Expenses when anything was written.
+ * 5. Appends to Categories every Category an Expense or Budget names that the tab lacks (AD-7).
+ * 6. Refreshes the mirror ([MirrorRefresh]), with each Expense and Budget taking its Category's own
+ *    spelling (AD-9).
  *
- * Any failed read or write stops the run with the mirror unchanged; the next trigger retries. Only
- * the failure kind is logged.
+ * Any failed repair, read or write stops the run with the mirror unchanged; the next trigger
+ * retries. Only the failure kind is logged. [SyncResult.Synced.skipped] counts invalid rows across
+ * all five tabs.
  */
 class SyncEngine
 @Inject
@@ -60,8 +65,12 @@ constructor(
       is ExpenseSheetResult.Failure -> return SyncResult.Failed(checked.reason.toSyncFailure())
       ExpenseSheetResult.NotFound -> return SyncResult.Failed(SyncFailure.Unexpected)
     }
+    sheets.repairLayout(sheetId).failure()?.let { return it }
     var sheetExpenses = sheets.readExpenses(sheetId).rowsOr { return it }
     val sheetCategories = sheets.readCategories(sheetId).rowsOr { return it }
+    val sheetBudgets = sheets.readBudgets(sheetId).rowsOr { return it }
+    val sheetDismissals = sheets.readDismissals(sheetId).rowsOr { return it }
+    val sheetSettings = sheets.readSettings(sheetId).rowsOr { return it }
 
     var rowsById = sheetExpenses.rowsById()
     var stale = false
@@ -80,23 +89,42 @@ constructor(
         rowsById = sheetExpenses.rowsById()
         stale = false
       }
-      when (val written = sheets.writeExpense(sheetId, local.toDomain(), rowsById[entry.rowKey])) {
-        is RowWriteResult.Written -> {
-          outbox.delete(entry.id)
-          pushed++
-          val row = written.row
-          if (row != null) rowsById[entry.rowKey] = row else stale = true
-        }
-        is RowWriteResult.NeedsConsent -> return SyncResult.Failed(SyncFailure.NeedsConsent)
-        RowWriteResult.SheetMissing -> return SyncResult.Failed(SyncFailure.SheetMissing)
-        is RowWriteResult.Failure -> return SyncResult.Failed(written.reason.toSyncFailure())
-      }
+      val written = sheets.writeExpense(sheetId, local.toDomain(), rowsById[entry.rowKey])
+      written.failure()?.let { return it }
+      outbox.delete(entry.id)
+      pushed++
+      val row = (written as RowWriteResult.Written).row
+      if (row != null) rowsById[entry.rowKey] = row else stale = true
     }
-
     if (pushed > 0) sheetExpenses = sheets.readExpenses(sheetId).rowsOr { return it }
-    refreshMirror(sheetExpenses.rows.map { it.value }, sheetCategories.rows.map { it.value })
-    return SyncResult.Synced(pushed = pushed, skipped = sheetExpenses.skipped + sheetCategories.skipped)
+
+    val pulled =
+      SheetContents(
+        expenses = sheetExpenses.values(),
+        categories = sheetCategories.values(),
+        budgets = sheetBudgets.values(),
+        dismissals = sheetDismissals.values(),
+        settings = sheetSettings.values(),
+      )
+    val added = MissingCategories.find(pulled)
+    if (added.isNotEmpty()) sheets.appendCategories(sheetId, added).failure()?.let { return it }
+    refreshMirror(MissingCategories.withCanonicalNames(pulled.copy(categories = pulled.categories + added)))
+    val skipped =
+      sheetExpenses.skipped + sheetCategories.skipped + sheetBudgets.skipped + sheetDismissals.skipped +
+        sheetSettings.skipped
+    return SyncResult.Synced(pushed = pushed, skipped = skipped)
   }
+
+  private fun <T> TabReadResult.Rows<T>.values(): List<T> = rows.map { it.value }
+
+  /** The run's failure for a write that wasn't confirmed, or null once it was. */
+  private fun RowWriteResult.failure(): SyncResult.Failed? =
+    when (this) {
+      is RowWriteResult.Written -> null
+      is RowWriteResult.NeedsConsent -> SyncResult.Failed(SyncFailure.NeedsConsent)
+      RowWriteResult.SheetMissing -> SyncResult.Failed(SyncFailure.SheetMissing)
+      is RowWriteResult.Failure -> SyncResult.Failed(reason.toSyncFailure())
+    }
 
   /** The successful read, or [onFailure] with the run's failure. */
   private inline fun <T> TabReadResult<T>.rowsOr(onFailure: (SyncResult.Failed) -> Nothing): TabReadResult.Rows<T> =

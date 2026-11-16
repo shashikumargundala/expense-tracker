@@ -8,9 +8,13 @@ import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
 import com.shashi.expensetracker.domain.account.RowWriteResult
 import com.shashi.expensetracker.domain.account.SheetRow
 import com.shashi.expensetracker.domain.account.TabReadResult
+import com.shashi.expensetracker.domain.budget.Budget
 import com.shashi.expensetracker.domain.category.Category
+import com.shashi.expensetracker.domain.inbox.Dismissal
+import com.shashi.expensetracker.domain.settings.Setting
 import com.squareup.moshi.Moshi
 import java.time.LocalDateTime
+import java.time.YearMonth
 import kotlinx.coroutines.test.runTest
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -23,7 +27,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The gateway's tab reads and Expenses row write against `mockwebserver3`, through the real client. */
+/** The gateway's tab reads and row writes against `mockwebserver3`, through the real client. */
 @RunWith(AndroidJUnit4::class)
 class SheetTabsTest {
 
@@ -74,11 +78,12 @@ class SheetTabsTest {
   }
 
   @Test
-  fun `readExpenses keeps sheet row numbers past blank rows and counts invalid rows`() = runTest {
+  fun `readExpenses keeps sheet row numbers past blank rows and counts invalid rows but not blank IDs`() = runTest {
     server.enqueue(
       json(
-        """{"range":"Expenses!A1:G5","values":[$expensesHeader,
-          ["a",46339.0,10,"Food"],[],["","2026-11-13",5,"Food"],["b","2026-11-13 09:30","₹1,200","Bills"]]}"""
+        """{"range":"Expenses!A1:G6","values":[$expensesHeader,
+          ["a",46339.0,10,"Food"],[],["","2026-11-13",5,"Food"],["b","2026-11-13 09:30","₹1,200","Bills"],
+          ["c","2026-11-13","abc","Food"]]}"""
       )
     )
 
@@ -90,10 +95,38 @@ class SheetTabsTest {
   }
 
   @Test
-  fun `a tab missing a required header is an Unexpected failure`() = runTest {
+  fun `a read whose tab still lacks a required header is an Unexpected failure`() = runTest {
     server.enqueue(json("""{"range":"Expenses!A1:B2","values":[["ID","Date"],["a",46339.0]]}"""))
 
     assertEquals(TabReadResult.Failure(ExpenseSheetFailure.Unexpected), gateway.readExpenses("sheet-1"))
+  }
+
+  @Test
+  fun `Budgets, Dismissed and Settings read by header name and count invalid rows`() = runTest {
+    server.enqueue(
+      json("""{"range":"Budgets!A1:D4","values":[["Notes","Month","Category","Amount"],["x","2026-10","Food","5,000"],["","","Food",100],["","2026-11","Bills",250.5]]}""")
+    )
+    server.enqueue(json("""{"range":"Dismissed!A1:B3","values":[["SMS ID","Dismissed On"],["h:abc",46339.0],["h:def","later"]]}"""))
+    server.enqueue(json("""{"range":"Settings!A1:B3","values":[["Key","Value"],["Currency","INR"],["Name"]]}"""))
+
+    val budgets = gateway.readBudgets("sheet-1")
+    val dismissals = gateway.readDismissals("sheet-1")
+    val settings = gateway.readSettings("sheet-1")
+
+    assertEquals(
+      TabReadResult.Rows(
+        listOf(SheetRow(2, Budget(YearMonth.of(2026, 10), "Food", 500_000)), SheetRow(4, Budget(YearMonth.of(2026, 11), "Bills", 25_050))),
+        skipped = 1,
+      ),
+      budgets,
+    )
+    assertEquals(TabReadResult.Rows(listOf(SheetRow(2, Dismissal("h:abc", LocalDateTime.of(2026, 11, 13, 0, 0)))), skipped = 1), dismissals)
+    assertEquals(TabReadResult.Rows(listOf(SheetRow(2, Setting("Currency", "INR")), SheetRow(3, Setting("Name", "")))), settings)
+    listOf("Budgets", "Dismissed", "Settings").forEach { tab ->
+      val request = server.takeRequest()
+      assertEquals("/v4/spreadsheets/sheet-1/values/$tab", request.url.encodedPath)
+      request.assertReadOptions()
+    }
   }
 
   @Test
@@ -195,5 +228,111 @@ class SheetTabsTest {
     server.enqueue(json("{}"))
 
     assertEquals(RowWriteResult.Written(null), gateway.writeExpense("sheet-1", sampleExpense(), null))
+  }
+
+  @Test
+  fun `appendCategories appends Name, Color and Icon under the current header, as text`() = runTest {
+    server.enqueue(json("""{"range":"Categories!1:1","values":[["Icon","Notes","Name","Color"]]}"""))
+    server.enqueue(json("""{"updates":{"updatedRange":"Categories!A7:D8"}}"""))
+
+    val result =
+      gateway.appendCategories("sheet-1", listOf(Category("Pets", "#10B981", "category"), Category("Gym", "#E11D48", "category")))
+
+    assertEquals(RowWriteResult.Written(7), result)
+    assertEquals("/v4/spreadsheets/sheet-1/values/Categories!1:1", server.takeRequest().url.encodedPath)
+    val append = server.takeRequest()
+    assertEquals("/v4/spreadsheets/sheet-1/values/Categories!A1:append", append.url.encodedPath)
+    assertEquals("USER_ENTERED", append.url.queryParameter("valueInputOption"))
+    val body = append.body!!.utf8()
+    assertTrue(body, body.contains("""[["'category","","'Pets","'#10B981"],["'category","","'Gym","'#E11D48"]]"""))
+  }
+
+  @Test
+  fun `appendCategories fails without a Name header and sends nothing for no Categories`() = runTest {
+    assertEquals(RowWriteResult.Written(null), gateway.appendCategories("sheet-1", emptyList()))
+    assertEquals(0, server.requestCount)
+
+    server.enqueue(json("""{"range":"Categories!1:1","values":[["Color"]]}"""))
+    assertEquals(
+      RowWriteResult.Failure(ExpenseSheetFailure.Unexpected),
+      gateway.appendCategories("sheet-1", listOf(Category("Pets", "", ""))),
+    )
+    assertEquals(1, server.requestCount)
+  }
+
+  private fun titles(vararg tabs: String) =
+    json("""{"sheets":[${tabs.joinToString(",") { """{"properties":{"title":"$it"}}""" }}]}""")
+
+  private fun headerRow(tab: String, cells: String) = json("""{"range":"$tab!1:1","values":[[$cells]]}""")
+
+  @Test
+  fun `repairLayout adds a deleted tab with its headers and a removed header into the first empty cell`() = runTest {
+    server.enqueue(titles("Expenses", "categories", "Budgets", "Dismissed"))
+    server.enqueue(json("{}"))
+    server.enqueue(headerRow("Expenses", """"ID","Date","Amount","Category","Description","","SMS ID","Notes""""))
+    server.enqueue(headerRow("Categories", """"name","Color","Icon""""))
+    server.enqueue(headerRow("Budgets", """"Month","Category","Amount""""))
+    server.enqueue(headerRow("Dismissed", """"SMS ID","Dismissed On""""))
+    server.enqueue(json("{}"))
+
+    assertEquals(RowWriteResult.Written(null), gateway.repairLayout("sheet-1"))
+
+    val get = server.takeRequest()
+    assertEquals("GET", get.method)
+    assertEquals("/v4/spreadsheets/sheet-1", get.url.encodedPath)
+    assertEquals("sheets.properties.title", get.url.queryParameter("fields"))
+    val addSheet = server.takeRequest()
+    assertEquals("POST", addSheet.method)
+    assertEquals("/v4/spreadsheets/sheet-1:batchUpdate", addSheet.url.encodedPath)
+    assertEquals("""{"requests":[{"addSheet":{"properties":{"title":"Settings"}}}]}""", addSheet.body!!.utf8())
+    listOf("Expenses", "Categories", "Budgets", "Dismissed").forEach {
+      assertEquals("/v4/spreadsheets/sheet-1/values/$it!1:1", server.takeRequest().url.encodedPath)
+    }
+    val headers = server.takeRequest()
+    assertEquals("/v4/spreadsheets/sheet-1/values:batchUpdate", headers.url.encodedPath)
+    assertEquals(
+      """{"valueInputOption":"RAW","data":[{"range":"Expenses!F1","values":[["Source"]]},""" +
+        """{"range":"Settings!A1","values":[["Key"]]},{"range":"Settings!B1","values":[["Value"]]}]}""",
+      headers.body!!.utf8(),
+    )
+    assertEquals(7, server.requestCount)
+  }
+
+  @Test
+  fun `repairLayout on a complete layout only reads`() = runTest {
+    server.enqueue(titles("Expenses", "Categories", "Budgets", "Dismissed", "Settings"))
+    server.enqueue(headerRow("Expenses", expensesHeader.removeSurrounding("[", "]")))
+    server.enqueue(headerRow("Categories", """"Name","Color","Icon""""))
+    server.enqueue(headerRow("Budgets", """"Month","Category","Amount""""))
+    server.enqueue(headerRow("Dismissed", """"SMS ID","Dismissed On""""))
+    server.enqueue(headerRow("Settings", """"Key","Value""""))
+
+    assertEquals(RowWriteResult.Written(null), gateway.repairLayout("sheet-1"))
+
+    assertEquals(6, server.requestCount)
+    repeat(6) { assertEquals("GET", server.takeRequest().method) }
+  }
+
+  @Test
+  fun `missing headers fill empty cells left to right, then past the end`() {
+    fun writes(header: List<Any?>) =
+      SheetLayoutRepair.headerWrites("Budgets", header, listOf("Month", "Category", "Amount")).map {
+        it.range to it.values.single().single()
+      }
+
+    assertEquals(listOf("Budgets!B1" to "Category", "Budgets!C1" to "Amount"), writes(listOf("Month", null, " ", "Notes")))
+    assertEquals(listOf("Budgets!C1" to "Category", "Budgets!D1" to "Amount"), writes(listOf("MONTH", "Notes")))
+    assertEquals(emptyList<Pair<String, Any?>>(), writes(listOf(" month ", "category", "Amount")))
+  }
+
+  @Test
+  fun `a failed repair maps a deleted sheet and stops before writing`() = runTest {
+    server.enqueue(json("""{"error":{"code":404}}""", code = 404))
+    assertEquals(RowWriteResult.SheetMissing, gateway.repairLayout("gone"))
+
+    server.enqueue(titles("Expenses"))
+    server.enqueue(json("{}", code = 500))
+    assertEquals(RowWriteResult.Failure(ExpenseSheetFailure.Unexpected), gateway.repairLayout("sheet-1"))
+    assertEquals(3, server.requestCount)
   }
 }
