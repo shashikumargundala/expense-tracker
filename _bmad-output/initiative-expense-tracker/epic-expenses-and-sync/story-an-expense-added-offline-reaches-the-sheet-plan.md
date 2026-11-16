@@ -115,6 +115,8 @@ The Expenses tab gets a minimal FAB, form and list with a "Waiting to sync" chip
 - Latent theme crash (existing): `Type.kt` gives `bodyLarge.lineHeight` in em and `bodySmall` in sp, so an M3 `OutlinedTextField` with a `label` throws "Cannot perform operation for Em and Sp". The minimal form uses placeholders instead. Entry 7's designed form needs labels, so fix the theme there (for example `bodyLarge` line height `19.5.sp`, which renders the same).
 - Review patch fallout: the trashed-Sheet `check()` at the start of every sync made 2.4's `storedSessionColdStartsToHomeWithNoNetworkCalls` fail, because launch now syncs (AD-14 app open). It became `storedSessionColdStartsToHomeOfflineWithoutSignInOrSheetSetup`: the fake's `check` returns `Network`, and the test asserts Home opens with no sign-in, access, find or create calls. Its intent, that launch doesn't depend on the network, is kept.
 
+- Device check (2026-11-16, S23, debug builds). With the 2.x `master` build signed in, this build was installed over it. Home opened with no sign-in: DB `user_version` 2, session and Sheet ID kept, and five Categories pulled. In airplane mode, ₹120 Food "Chai" listed with "Waiting to sync". Back online, after a force-stop and reopen, the outbox was empty and the owner saw the row in the Sheet. Both acceptance criteria pass.
+
 ## Plan Change Log
 
 ## Review Triage Log
