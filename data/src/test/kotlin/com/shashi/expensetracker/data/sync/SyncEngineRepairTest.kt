@@ -219,7 +219,7 @@ class SyncEngineRepairTest {
   }
 
   @Test
-  fun `a failed or refused repair write, delete or Dismissed append stops before any push or refresh`() = runTest {
+  fun `a failed or refused repair write or delete stops before any push, and a failed Dismissed append before the refresh`() = runTest {
     repository.add(sampleExpense(id = "kept"))
     db.expenseDao().upsert(sampleExpense(id = "gone").copy(smsId = "s1").toEntity())
     val x = sampleExpense(id = "x")
@@ -250,8 +250,9 @@ class SyncEngineRepairTest {
     // Three failed deletes, then the one that let the Dismissed append run.
     assertEquals(4, sheet.deletes.size)
 
-    assertTrue(sheet.writes.isEmpty())
-    assertEquals(listOf("kept"), db.outboxDao().getAll().map { it.rowKey })
+    // The Dismissed append runs after the push, so only its first failed run pushed the entry.
+    assertEquals(listOf("kept"), sheet.writes.map { it.first.id })
+    assertTrue(db.outboxDao().getAll().isEmpty())
     assertEquals(listOf("gone", "kept"), mirror().map { it.id })
   }
 

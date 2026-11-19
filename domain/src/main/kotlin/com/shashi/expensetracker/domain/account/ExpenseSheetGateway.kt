@@ -96,8 +96,9 @@ interface ExpenseSheetGateway {
 
   /**
    * Deletes the 1-based [rows] of the Expenses tab of [sheetId] (from this run's read) in one
-   * request, bottom-up, so no delete shifts a row still to be deleted. Only AD-5's retry
-   * duplicates are deleted. Sends nothing for no rows.
+   * request, bottom-up, so no delete shifts a row still to be deleted. Sync deletes only AD-5's
+   * retry duplicates and the rows of pushed `DeleteExpense` entries (AD-4). Sends nothing for no
+   * rows.
    */
   suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult
 
