@@ -9,9 +9,16 @@ import com.shashi.expensetracker.domain.expense.Expense
  * its Date, Amount or Category is missing or unreadable: an invalid row (AD-7), which is never
  * repaired, deleted or written, and whose [id] still counts as present in the Sheet. For a valid row
  * with a blank ID, [expense] has an empty `id`. [sourceBlank] is whether the Source cell was blank,
- * which [expense] reads as `User`.
+ * which [expense] reads as `User`. [category] is the trimmed Category cell, or null when blank; it is
+ * read for invalid rows too, so a pushed `DeleteCategory` can rewrite every row using a Category
+ * (AD-9).
  */
-data class ExpenseRowRead(val id: String?, val expense: Expense?, val sourceBlank: Boolean = false) {
+data class ExpenseRowRead(
+  val id: String?,
+  val expense: Expense?,
+  val sourceBlank: Boolean = false,
+  val category: String? = expense?.category,
+) {
   /** A row the app can mirror: valid, with an ID. */
   val keyed: Expense?
     get() = expense?.takeIf { id != null }

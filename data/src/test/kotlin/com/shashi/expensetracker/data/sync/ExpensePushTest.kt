@@ -57,7 +57,7 @@ class ExpensePushTest {
   @After fun tearDown() = db.close()
 
   private fun engine(gateway: ExpenseSheetGateway = sheet) =
-    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
+    SyncEngine(gateway, db.expenseDao(), db.categoryDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
 
   private suspend fun sync() = engine().sync("sheet-1")
 

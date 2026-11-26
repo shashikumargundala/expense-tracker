@@ -12,9 +12,18 @@ sealed interface TabReadResult<out T> {
   /**
    * The tab's rows under its header. [skipped] counts invalid rows, such as a row with an
    * unreadable amount; they are left untouched in the Sheet (AD-7). A row with a blank key isn't
-   * counted.
+   * counted. [invalidKeys] holds the trimmed row key of each invalid row whose key could be read
+   * (the ID, the Category name, `yyyy-MM|Category` for a Budget, the SMS ID or the Setting key, as
+   * typed), so sync never appends a second row for a key the tab already has. [invalidRows] holds
+   * the same keys with each invalid row's 1-based row number, in sheet order, so sync can delete
+   * an invalid row that a pushed change removes (AD-9's Budgets cleanup).
    */
-  data class Rows<T>(val rows: List<SheetRow<T>>, val skipped: Int = 0) : TabReadResult<T>
+  data class Rows<T>(
+    val rows: List<SheetRow<T>>,
+    val skipped: Int = 0,
+    val invalidKeys: Set<String> = emptySet(),
+    val invalidRows: List<SheetRow<String>> = emptyList(),
+  ) : TabReadResult<T>
 
   /** The Sheet was deleted (AD-20). */
   data object SheetMissing : TabReadResult<Nothing>
@@ -23,6 +32,15 @@ sealed interface TabReadResult<out T> {
   data class NeedsConsent(val request: ConsentRequest) : TabReadResult<Nothing>
 
   data class Failure(val reason: ExpenseSheetFailure) : TabReadResult<Nothing>
+}
+
+/** The five tabs of the Expense Sheet (AD-7). */
+enum class SheetTab {
+  Expenses,
+  Categories,
+  Budgets,
+  Dismissed,
+  Settings,
 }
 
 /** Outcome of writing one row with [ExpenseSheetGateway]. */

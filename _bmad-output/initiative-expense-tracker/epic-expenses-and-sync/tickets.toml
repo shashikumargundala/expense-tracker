@@ -50,14 +50,25 @@ risk = "high"
 [[entry]]
 id = 5
 type = "story"
-title = "Push Category, Budget, Dismissal and Setting changes"
-description = "Adds the `:domain` write API that epics 4 and 5 call, with each method writing the mirror and its outbox entry in one transaction: `CategoryRepository` (upsert, delete with reassignTo), `BudgetRepository` (upsert), `DismissalRepository` (add) and `SettingRepository` (upsert). Applies their pushes with the base check. `DeleteCategory(name, reassignTo)` rewrites every matching Expense row without the base check, deletes that Category's Budgets rows, then deletes the Category row (AD-9). `AddDismissal` does nothing if the fingerprint is already there. No screens are built here."
-verify = "The remaining rows of the sync test matrix pass against the fake gateway for UpsertCategory, DeleteCategory, UpsertBudget, AddDismissal and UpsertSetting."
+title = "Push Category changes"
+description = "Adds `CategoryRepository` upsert and delete-with-reassignTo to `:domain`, each writing the mirror and its outbox entry in one transaction. The outbox gets a nullable `payload` column (Room v3, an `AutoMigration(2, 3)`, a migration test) to hold `reassignTo`. `UpsertCategory` is pushed with the base check. `DeleteCategory(name, reassignTo)` rewrites every matching Expense row in the fresh read to `reassignTo` without the base check, deletes that Category's Budgets rows, then deletes the Category row (AD-9). The local delete reassigns the mirror's Expenses and drops its Budgets in the same transaction. `MissingCategories` treats Categories with a pending `UpsertCategory` as known, and invalid Category rows are reported by key so a push never appends a second row for them. No screens are built here."
+verify = "The Category rows of the sync test matrix pass against the fake gateway: UpsertCategory against row unchanged, changed in Sheet, deleted in Sheet and invalid, and DeleteCategory's reassign, Budgets cleanup and Category row delete, plus the v2 to v3 migration test."
 covers = ["CAP-3"]
 after = [4]
 hitl = false
 risk = "high"
 references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-9-categories-are-referenced-by-name-adopted"]
+
+[[entry]]
+id = 16
+type = "story"
+title = "Push Budget, Dismissal and Setting changes"
+description = "Adds `BudgetRepository` (upsert), `DismissalRepository` (add) and `SettingRepository` (upsert) to `:domain`, each writing the mirror and its outbox entry in one transaction, and pushes `UpsertBudget(month, category)`, `AddDismissal` and `UpsertSetting` with the base check. `AddDismissal` does nothing if the fingerprint is already there. Invalid Budgets and Settings rows are reported by key so a push never appends a second row for them. Epics 4 and 5 call these write APIs; no screens are built here."
+verify = "The remaining rows of the sync test matrix pass against the fake gateway for UpsertBudget, AddDismissal and UpsertSetting."
+covers = ["CAP-3", "CAP-18"]
+after = [5]
+hitl = false
+risk = "high"
 
 [[entry]]
 id = 6
@@ -66,7 +77,7 @@ title = "Sync runs on its own"
 description = "Completes AD-14. The coordinator runs at most one sync and coalesces overlapping requests. Syncs start on app open and on return to the foreground. A unique WorkManager job (CONNECTED, KEEP, exponential backoff, Hilt worker) is enqueued by observing the outbox whenever it's non-empty, not by hooking each writer, so changes reach the Sheet with the app closed. A `SheetMissing` result runs story 2.4's find-or-create and stores the new Sheet ID (AD-20). Background runs return `NeedsUserConsent` without prompting (AD-10); entry 11 owns the foreground prompt. Extends entry 1's sync state into the `:domain` sync status flow: pending count, offline, error with entry 2's invalid count, and needs consent."
 verify = "WorkManager tests show the job is enqueued when the outbox becomes non-empty and retries with backoff; coordinator tests show overlapping requests run once; on the phone an Expense added offline reaches the Sheet after reconnecting with the app swiped away."
 covers = ["CAP-5"]
-after = [5]
+after = [16]
 hitl = false
 risk = "high"
 references = ["architecture-expense-tracker/architecture-expense-tracker.md#ad-14-sync-triggers-adopted", "architecture-expense-tracker/architecture-expense-tracker.md#ad-20-session-lifecycle-adopted"]
@@ -137,7 +148,7 @@ title = "Currency and display name in Settings"
 description = "Adds the Preferences section from the Settings mockup: a Currency dropdown of two-decimal currencies (INR default) and a Display name field. Both save through entry 5's `SettingRepository` to the Settings tab and read back from the mirror, so they restore on a new phone. Every amount the app shows goes through entry 7's money formatter with the chosen Currency, which changes only the symbol and format. Adds entry 11's error and consent pills to story 2.6's Google account tile. Replaces Home's greeting tracer (`GetGreetingUseCase`, `StubGreetingGateway`) with the display name greeting ('Good evening, Shylock') from the Settings mirror and the injected Clock."
 verify = "Domain tests cover the setting writes and defaults; Compose tests show a Currency change re-formatting amounts without converting them; Home's greeting follows the display name and time of day; after clearing app data and signing in, the chosen Currency and name return."
 covers = ["CAP-18"]
-after = [5, 11, "2.6"]
+after = [16, 11, "2.6"]
 hitl = false
 risk = "medium"
 references = ["ux-expense-tracker/mockups/key-settings.html"]
@@ -173,6 +184,6 @@ title = "Refactor sweep"
 description = "Cleans up what this epic's plans and deferred review findings name; scope is set when it starts."
 verify = "CI is green and every deferred finding from this epic is resolved or recorded."
 covers = []
-after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16]
 hitl = false
 risk = "low"

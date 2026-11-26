@@ -30,6 +30,18 @@ internal object BudgetRowMapping {
     return ParsedRow.Valid(Budget(month = month, category = category ?: return ParsedRow.Invalid, amountPaise = amount))
   }
 
+  /**
+   * The row key of an invalid [row], `yyyy-MM|Category` (AD-3) with the Category as typed, or null
+   * when its Category is blank. An unreadable Month keeps its trimmed text (or nothing) before the
+   * `|`, so every invalid row of a Category still has a key, though not one a Budget entry matches.
+   */
+  fun key(row: List<Any?>, columns: Map<String, Int>): String? {
+    val category = text(cell(row, columns, CATEGORY)) ?: return null
+    val monthCell = cell(row, columns, MONTH)
+    val month = month(monthCell)?.toString() ?: text(monthCell).orEmpty()
+    return "$month|$category"
+  }
+
   /** A Month cell: `yyyy-MM` text, or any date [SheetValues.date] reads (its month). Null otherwise. */
   fun month(cell: Any?): YearMonth? {
     if (cell is String) {

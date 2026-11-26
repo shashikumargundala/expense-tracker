@@ -6,6 +6,7 @@ import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
 import com.shashi.expensetracker.domain.account.ExpenseSheetGateway
 import com.shashi.expensetracker.domain.account.ExpenseSheetResult
 import com.shashi.expensetracker.domain.account.RowWriteResult
+import com.shashi.expensetracker.domain.account.SheetTab
 import com.shashi.expensetracker.domain.account.TabReadResult
 import com.shashi.expensetracker.domain.budget.Budget
 import com.shashi.expensetracker.domain.category.Category
@@ -95,8 +96,14 @@ constructor(private val drive: DriveService, private val sheets: SheetsService) 
   override suspend fun writeExpenseRepairs(sheetId: String, fixes: List<ExpenseRowFix>): RowWriteResult =
     tabs.writeExpenseRepairs(sheetId, fixes)
 
-  override suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult =
-    tabs.deleteExpenseRows(sheetId, rows)
+  override suspend fun writeCategory(sheetId: String, category: Category, existingRow: Int?): RowWriteResult =
+    tabs.writeCategory(sheetId, category, existingRow)
+
+  override suspend fun writeExpenseCategories(sheetId: String, rows: List<Int>, category: String): RowWriteResult =
+    tabs.writeExpenseCategories(sheetId, rows, category)
+
+  override suspend fun deleteRows(sheetId: String, tab: SheetTab, rows: List<Int>): RowWriteResult =
+    tabs.deleteRows(sheetId, tab, rows)
 
   override suspend fun appendDismissals(sheetId: String, dismissals: List<Dismissal>): RowWriteResult =
     tabs.appendDismissals(sheetId, dismissals)

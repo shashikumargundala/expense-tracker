@@ -29,4 +29,11 @@ interface ExpenseDao {
   @Upsert suspend fun upsertAll(expenses: List<ExpenseEntity>)
 
   @Query("DELETE FROM expenses WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<String>)
+
+  /**
+   * Moves every Expense whose Category is [from] (trimmed, ignoring ASCII case, as `CategoryKey`
+   * compares) to [to]. Pass [from] trimmed.
+   */
+  @Query("UPDATE expenses SET category = :to WHERE trim(category) = :from COLLATE NOCASE")
+  suspend fun reassignCategory(from: String, to: String)
 }

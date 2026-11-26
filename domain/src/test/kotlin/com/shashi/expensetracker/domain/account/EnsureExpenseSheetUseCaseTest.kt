@@ -107,7 +107,13 @@ class EnsureExpenseSheetUseCaseTest {
     override suspend fun writeExpenseRepairs(sheetId: String, fixes: List<ExpenseRowFix>): RowWriteResult =
       error("not used")
 
-    override suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult = error("not used")
+    override suspend fun writeCategory(sheetId: String, category: Category, existingRow: Int?): RowWriteResult =
+      error("not used")
+
+    override suspend fun writeExpenseCategories(sheetId: String, rows: List<Int>, category: String): RowWriteResult =
+      error("not used")
+
+    override suspend fun deleteRows(sheetId: String, tab: SheetTab, rows: List<Int>): RowWriteResult = error("not used")
 
     override suspend fun appendDismissals(sheetId: String, dismissals: List<Dismissal>): RowWriteResult =
       error("not used")

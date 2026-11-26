@@ -66,14 +66,16 @@ class ExpenseRowMappingTest {
   @Test
   fun `a row with an ID but a missing or unreadable Date, Amount or Category is invalid`() {
     val valid = listOf<Any?>("id-1", 46339.0, 10, "Food", "", "", "")
-    val invalid = ExpenseRowRead(id = "id-1", expense = null, sourceBlank = true)
-    listOf(1, 2, 3).forEach { blank ->
+    // An invalid row still reads its raw Category, for AD-9's rewrite.
+    val invalid = ExpenseRowRead(id = "id-1", expense = null, sourceBlank = true, category = "Food")
+    listOf(1, 2).forEach { blank ->
       val row = valid.toMutableList().also { it[blank] = "" }
       assertEquals("blank column $blank", invalid, ExpenseRowMapping.row(row, columns))
     }
+    assertEquals(invalid.copy(category = null), ExpenseRowMapping.row(valid.toMutableList().also { it[3] = "" }, columns))
     assertEquals(invalid, ExpenseRowMapping.row(valid.toMutableList().also { it[2] = "abc" }, columns))
     assertEquals(invalid, ExpenseRowMapping.row(valid.toMutableList().also { it[1] = "someday" }, columns))
-    assertEquals(invalid, ExpenseRowMapping.row(listOf("id-1", 46339.0), columns))
+    assertEquals(invalid.copy(category = null), ExpenseRowMapping.row(listOf("id-1", 46339.0), columns))
   }
 
   @Test
@@ -84,7 +86,10 @@ class ExpenseRowMappingTest {
     assertEquals("", read.expense?.id)
     assertEquals(1_000L, read.expense?.amountPaise)
     assertFalse(read.sourceBlank)
-    assertEquals(ExpenseRowRead(null, null, sourceBlank = true), ExpenseRowMapping.row(listOf("", "", 10, "Food"), columns))
+    assertEquals(
+      ExpenseRowRead(null, null, sourceBlank = true, category = "Food"),
+      ExpenseRowMapping.row(listOf("", "", 10, "Food"), columns),
+    )
   }
 
   @Test
