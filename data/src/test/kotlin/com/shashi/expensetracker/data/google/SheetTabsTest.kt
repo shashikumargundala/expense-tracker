@@ -120,10 +120,13 @@ class SheetTabsTest {
       TabReadResult.Rows(
         listOf(SheetRow(2, Budget(YearMonth.of(2026, 10), "Food", 500_000)), SheetRow(4, Budget(YearMonth.of(2026, 11), "Bills", 25_050))),
         skipped = 1,
+        // The blank Month still leaves a key, so the row can be found by its Category.
+        invalidKeys = setOf("|Food"),
+        invalidRows = listOf(SheetRow(3, "|Food")),
       ),
       budgets,
     )
-    assertEquals(TabReadResult.Rows(listOf(SheetRow(2, Dismissal("h:abc", LocalDateTime.of(2026, 11, 13, 0, 0)))), skipped = 1), dismissals)
+    assertEquals(TabReadResult.Rows(listOf(SheetRow(2, Dismissal("h:abc", LocalDateTime.of(2026, 11, 13, 0, 0)))), skipped = 1, invalidKeys = setOf("h:def"), invalidRows = listOf(SheetRow(3, "h:def"))), dismissals)
     assertEquals(TabReadResult.Rows(listOf(SheetRow(2, Setting("Currency", "INR")), SheetRow(3, Setting("Name", "")))), settings)
     listOf("Budgets", "Dismissed", "Settings").forEach { tab ->
       val request = server.takeRequest()

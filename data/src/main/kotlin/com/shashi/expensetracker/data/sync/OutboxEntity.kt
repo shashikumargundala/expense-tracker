@@ -43,6 +43,8 @@ enum class OutboxType {
  * after the API confirms the write. Entries apply in [id] order.
  *
  * [base] is a JSON text of the row's mapped values as last pulled, or null for "absent" (AD-4).
+ * [payload] is the entry's argument beyond its key, null for types that have none: for
+ * `DeleteCategory` it is `reassignTo`, the Category its Expenses move to (AD-9). Added in v3.
  */
 @Entity(tableName = "outbox", indices = [Index("row_key")])
 data class OutboxEntity(
@@ -51,4 +53,5 @@ data class OutboxEntity(
   @ColumnInfo(name = "row_key") val rowKey: String,
   val base: String?,
   @ColumnInfo(name = "created_at") val createdAt: LocalDateTime,
+  val payload: String? = null,
 )

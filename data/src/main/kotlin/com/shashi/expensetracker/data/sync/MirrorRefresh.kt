@@ -27,13 +27,16 @@ import javax.inject.Inject
 
 /**
  * One successful read of all five tabs, each in sheet order, as the mirror should hold it.
- * [invalidExpenseIds] are the IDs of invalid Expenses rows (AD-7): still in the Sheet, so their
- * mirror rows are kept as they are.
+ * [invalidExpenseIds] are the IDs of invalid Expenses rows and [invalidCategoryNames] the names of
+ * invalid Categories rows (AD-7): still in the Sheet, so their mirror rows are kept as they are.
+ * The real Categories mapping never finds a row invalid today, so [invalidCategoryNames] is empty
+ * outside tests; it is kept for a mapping that adds validation.
  */
 data class SheetContents(
   val expenses: List<Expense> = emptyList(),
   val invalidExpenseIds: Set<String> = emptySet(),
   val categories: List<Category> = emptyList(),
+  val invalidCategoryNames: Set<String> = emptySet(),
   val budgets: List<Budget> = emptyList(),
   val dismissals: List<Dismissal> = emptyList(),
   val settings: List<Setting> = emptyList(),
@@ -84,6 +87,7 @@ constructor(
         current = categories.getAll().map { it.toDomain() },
         upsert = { rows -> categories.upsertAll(rows.map { it.toEntity() }) },
         delete = { rows -> rows.map { it.name }.chunked(MAX_ARGS).forEach { categories.deleteByNames(it) } },
+        keep = sheet.invalidCategoryNames.mapTo(HashSet(), CategoryKey::of),
       )
       diff(
         sheet = sheet.budgets,

@@ -31,7 +31,12 @@ internal object ExpenseRowMapping {
     fun cell(name: String): Any? = cell(row, columns, name)
     val id = text(cell(ID))
     val source = text(cell(SOURCE))
-    return ExpenseRowRead(id = id, expense = expense(id.orEmpty(), source, ::cell), sourceBlank = source == null)
+    return ExpenseRowRead(
+      id = id,
+      expense = expense(id.orEmpty(), source, ::cell),
+      sourceBlank = source == null,
+      category = text(cell(CATEGORY)),
+    )
   }
 
   private fun expense(id: String, source: String?, cell: (String) -> Any?): Expense? {

@@ -60,7 +60,7 @@ class SyncCoordinatorTest {
   @After fun tearDown() = db.close()
 
   private fun engine(gateway: ExpenseSheetGateway) =
-    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
+    SyncEngine(gateway, db.expenseDao(), db.categoryDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
 
   @Test
   fun `a run syncs the stored session's Sheet`() = runTest {

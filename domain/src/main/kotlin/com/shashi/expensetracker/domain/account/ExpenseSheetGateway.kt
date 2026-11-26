@@ -95,12 +95,32 @@ interface ExpenseSheetGateway {
   suspend fun writeExpenseRepairs(sheetId: String, fixes: List<ExpenseRowFix>): RowWriteResult
 
   /**
-   * Deletes the 1-based [rows] of the Expenses tab of [sheetId] (from this run's read) in one
-   * request, bottom-up, so no delete shifts a row still to be deleted. Sync deletes only AD-5's
-   * retry duplicates and the rows of pushed `DeleteExpense` entries (AD-4). Sends nothing for no
-   * rows.
+   * Writes [category] to the Categories tab of [sheetId], only in the Name, Color and Icon columns,
+   * under the tab's current header. With [existingRow] (the 1-based row holding the Category's name
+   * in this run's read) it updates that row in place; with null it appends a new row. Unknown
+   * columns are never touched.
    */
-  suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult
+  suspend fun writeCategory(sheetId: String, category: Category, existingRow: Int?): RowWriteResult
+
+  /**
+   * Writes [category] into the Category cell of each of the 1-based Expenses [rows] of [sheetId]
+   * (from this run's read) with one write, for a pushed `DeleteCategory` (AD-9). No other cell is
+   * touched. Sends nothing for no rows.
+   */
+  suspend fun writeExpenseCategories(sheetId: String, rows: List<Int>, category: String): RowWriteResult
+
+  /**
+   * Deletes the 1-based [rows] of [tab] in [sheetId] (from this run's read) in one request,
+   * bottom-up, so no delete shifts a row still to be deleted. Sends nothing for no rows.
+   */
+  suspend fun deleteRows(sheetId: String, tab: SheetTab, rows: List<Int>): RowWriteResult
+
+  /**
+   * [deleteRows] on the Expenses tab. Sync deletes only AD-5's retry duplicates and the rows of
+   * pushed `DeleteExpense` entries (AD-4).
+   */
+  suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult =
+    deleteRows(sheetId, SheetTab.Expenses, rows)
 
   /**
    * Appends [dismissals] to the Dismissed tab of [sheetId], in order, one row each, only in the

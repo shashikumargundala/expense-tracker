@@ -11,6 +11,11 @@ interface CategoryDao {
 
   @Query("SELECT * FROM categories") suspend fun getAll(): List<CategoryEntity>
 
+  /** The Category named [name], ignoring case (the column is `NOCASE`); pass it trimmed. */
+  @Query("SELECT * FROM categories WHERE name = :name") suspend fun get(name: String): CategoryEntity?
+
+  @Upsert suspend fun upsert(category: CategoryEntity)
+
   @Upsert suspend fun upsertAll(categories: List<CategoryEntity>)
 
   /** Deletes by name, ignoring case (the column is `NOCASE`). */

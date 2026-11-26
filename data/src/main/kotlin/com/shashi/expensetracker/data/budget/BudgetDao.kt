@@ -13,4 +13,8 @@ interface BudgetDao {
 
   /** Deletes by key; the Category compares ignoring case (the column is `NOCASE`). */
   @Delete suspend fun delete(budgets: List<BudgetEntity>)
+
+  /** Deletes every Budget of [category] (trimmed, ignoring ASCII case). Pass [category] trimmed. */
+  @Query("DELETE FROM budgets WHERE trim(category) = :category COLLATE NOCASE")
+  suspend fun deleteByCategory(category: String)
 }

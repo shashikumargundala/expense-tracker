@@ -10,10 +10,15 @@ internal object MissingCategories {
   /**
    * The Categories to append for every name an Expense or Budget of [sheet] uses that its
    * Categories lack, in sheet order (Expenses first) with the first spelling seen, each with its
-   * colour and icon.
+   * colour and icon. A name is known, and never appended, when the tab has it (valid or invalid) or
+   * when [pending] (the row keys of pending `UpsertCategory` entries) has it: its push appends it
+   * with the user's colour and icon. The real Categories read never reports an invalid row today,
+   * so the invalid names are empty outside tests; they are kept for a mapping that adds validation.
    */
-  fun find(sheet: SheetContents): List<Category> {
+  fun find(sheet: SheetContents, pending: Collection<String> = emptyList()): List<Category> {
     val known = sheet.categories.mapTo(HashSet()) { CategoryKey.of(it.name) }
+    sheet.invalidCategoryNames.mapTo(known, CategoryKey::of)
+    pending.mapTo(known, CategoryKey::of)
     val names =
       (sheet.expenses.map { it.category } + sheet.budgets.map { it.category })
         .filter { CategoryKey.of(it) !in known }

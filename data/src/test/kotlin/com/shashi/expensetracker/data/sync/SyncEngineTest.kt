@@ -58,7 +58,7 @@ class SyncEngineTest {
   }
 
   private fun newEngine(gateway: ExpenseSheetGateway = sheet) =
-    SyncEngine(gateway, db.expenseDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
+    SyncEngine(gateway, db.expenseDao(), db.categoryDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
 
   @After fun tearDown() = db.close()
 

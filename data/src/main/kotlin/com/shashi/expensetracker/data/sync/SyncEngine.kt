@@ -1,6 +1,7 @@
 package com.shashi.expensetracker.data.sync
 
 import android.util.Log
+import com.shashi.expensetracker.data.category.CategoryDao
 import com.shashi.expensetracker.data.expense.ExpenseDao
 import com.shashi.expensetracker.domain.account.ExpenseRowRead
 import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
@@ -17,8 +18,8 @@ import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * One sync run (AD-4), the only caller of [ExpenseSheetGateway]'s repair, tab reads and writes. It
- * applies only `UpsertExpense` and `DeleteExpense` entries; entries of the other five types stay in
- * the outbox for later stories.
+ * applies `UpsertExpense`, `DeleteExpense`, `UpsertCategory` and `DeleteCategory` entries; entries
+ * of the other three types stay in the outbox for later stories.
  *
  * 0. Checks the Sheet still exists and isn't trashed: a trashed Sheet still accepts writes, so
  *    without this, entries would be "confirmed" into Drive's trash.
@@ -33,12 +34,17 @@ import kotlin.coroutines.cancellation.CancellationException
  *    written in place or appended, and the deletes go in one bottom-up request after the writes.
  *    A key's entries leave the outbox only after the API confirms its change.
  * 5. Re-reads Expenses when any row was written or deleted.
- * 6. Appends to Dismissed the SMS ID of every mirror Expense that is gone from the Sheet (AD-13):
+ * 6. Pushes the Category entries against that read and the Categories and Budgets reads
+ *    ([CategoryPush]): an upsert has the base check; a delete rewrites the Category cell of every
+ *    Expense using it to `reassignTo` without one, then deletes its Budgets rows and its Category
+ *    row (AD-9). Re-reads Expenses, Categories and Budgets when anything was written or deleted.
+ * 7. Appends to Dismissed the SMS ID of every mirror Expense that is gone from the Sheet (AD-13):
  *    its ID is in neither a valid nor an invalid row, and it has no outbox entry left after the
  *    push. An SMS ID Dismissed already has is skipped.
- * 7. Appends to Categories every Category an Expense or Budget names that the tab lacks (AD-7).
- * 8. Refreshes the mirror ([MirrorRefresh]), with each Expense and Budget taking its Category's own
- *    spelling (AD-9). Mirror Expenses whose rows are invalid are kept.
+ * 8. Appends to Categories every Category an Expense or Budget names that the tab lacks (AD-7),
+ *    other than one with a pending `UpsertCategory`.
+ * 9. Refreshes the mirror ([MirrorRefresh]), with each Expense and Budget taking its Category's own
+ *    spelling (AD-9). Mirror Expenses and Categories whose rows are invalid are kept.
  *
  * Any failed repair, read or write stops the run with the mirror unchanged; the next trigger
  * retries from a fresh read, so the ID repair is idempotent. Only the failure kind is logged.
@@ -49,11 +55,13 @@ class SyncEngine
 constructor(
   private val sheets: ExpenseSheetGateway,
   private val expenses: ExpenseDao,
+  private val categories: CategoryDao,
   private val outbox: OutboxDao,
   private val refreshMirror: MirrorRefresh,
   private val clock: Clock,
 ) {
   private val push = ExpensePush(sheets, expenses, outbox)
+  private val pushCategories = CategoryPush(sheets, categories, outbox)
 
   suspend fun sync(sheetId: String): SyncResult {
     val result =
@@ -79,8 +87,8 @@ constructor(
     }
     sheets.repairLayout(sheetId).failure()?.let { return it }
     var sheetExpenses = sheets.readExpenses(sheetId).rowsOr { return it }
-    val sheetCategories = sheets.readCategories(sheetId).rowsOr { return it }
-    val sheetBudgets = sheets.readBudgets(sheetId).rowsOr { return it }
+    var sheetCategories = sheets.readCategories(sheetId).rowsOr { return it }
+    var sheetBudgets = sheets.readBudgets(sheetId).rowsOr { return it }
     val sheetDismissals = sheets.readDismissals(sheetId).rowsOr { return it }
     val sheetSettings = sheets.readSettings(sheetId).rowsOr { return it }
 
@@ -89,13 +97,25 @@ constructor(
     if (repair.deletes.isNotEmpty()) sheets.deleteExpenseRows(sheetId, repair.deletes).failure()?.let { return it }
     if (repair.changesIds) sheetExpenses = sheets.readExpenses(sheetId).rowsOr { return it }
 
-    val pushed =
+    val pushedExpenses =
       when (val outcome = push(sheetId, sheetExpenses)) {
         is ExpensePush.Outcome.Stopped -> return checkNotNull(outcome.result.failure())
         is ExpensePush.Outcome.Done -> outcome.pushed
       }
     // Rows were appended, updated or deleted: refresh from what the Sheet now holds.
-    if (pushed > 0) sheetExpenses = sheets.readExpenses(sheetId).rowsOr { return it }
+    if (pushedExpenses > 0) sheetExpenses = sheets.readExpenses(sheetId).rowsOr { return it }
+
+    val pushedCategories =
+      when (val outcome = pushCategories(sheetId, sheetExpenses, sheetCategories, sheetBudgets)) {
+        is ExpensePush.Outcome.Stopped -> return checkNotNull(outcome.result.failure())
+        is ExpensePush.Outcome.Done -> outcome.pushed
+      }
+    if (pushedCategories > 0) {
+      sheetExpenses = sheets.readExpenses(sheetId).rowsOr { return it }
+      sheetCategories = sheets.readCategories(sheetId).rowsOr { return it }
+      sheetBudgets = sheets.readBudgets(sheetId).rowsOr { return it }
+    }
+    val pushed = pushedExpenses + pushedCategories
 
     // After the push, so an entry it dropped no longer hides its Expense's SMS ID (AD-13).
     val vanished = vanishedDismissals(sheetExpenses, sheetDismissals)
@@ -106,11 +126,12 @@ constructor(
         expenses = sheetExpenses.rows.mapNotNull { it.value.keyed },
         invalidExpenseIds = sheetExpenses.invalidIds(),
         categories = sheetCategories.values(),
+        invalidCategoryNames = sheetCategories.invalidKeys,
         budgets = sheetBudgets.values(),
         dismissals = sheetDismissals.values() + vanished,
         settings = sheetSettings.values(),
       )
-    val added = MissingCategories.find(pulled)
+    val added = MissingCategories.find(pulled, outbox.rowKeys(listOf(OutboxType.UpsertCategory)))
     if (added.isNotEmpty()) sheets.appendCategories(sheetId, added).failure()?.let { return it }
     refreshMirror(MissingCategories.withCanonicalNames(pulled.copy(categories = pulled.categories + added)))
     val skipped =

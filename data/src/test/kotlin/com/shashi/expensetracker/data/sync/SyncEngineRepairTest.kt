@@ -49,7 +49,7 @@ class SyncEngineRepairTest {
   fun setUp() {
     db = inMemoryDatabase()
     repository = RoomExpenseRepository(db, db.expenseDao(), db.outboxDao(), testClock)
-    engine = SyncEngine(sheet, db.expenseDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
+    engine = SyncEngine(sheet, db.expenseDao(), db.categoryDao(), db.outboxDao(), db.mirrorRefresh(), testClock)
   }
 
   @After fun tearDown() = db.close()

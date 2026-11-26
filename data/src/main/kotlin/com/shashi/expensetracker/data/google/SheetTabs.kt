@@ -5,6 +5,7 @@ import com.shashi.expensetracker.domain.account.ExpenseRowRead
 import com.shashi.expensetracker.domain.account.ExpenseSheetFailure
 import com.shashi.expensetracker.domain.account.RowWriteResult
 import com.shashi.expensetracker.domain.account.SheetRow
+import com.shashi.expensetracker.domain.account.SheetTab
 import com.shashi.expensetracker.domain.account.TabReadResult
 import com.shashi.expensetracker.domain.budget.Budget
 import com.shashi.expensetracker.domain.category.Category
@@ -20,29 +21,62 @@ import com.shashi.expensetracker.domain.settings.Setting
  */
 internal class SheetTabs(private val sheets: SheetsService) {
 
-  /** Every non-blank Expenses row, blank IDs and invalid rows included; invalid rows are counted. */
+  /**
+   * Every non-blank Expenses row, blank IDs and invalid rows included; invalid rows are counted and
+   * their IDs are the read's invalid keys.
+   */
   suspend fun readExpenses(sheetId: String): TabReadResult<ExpenseRowRead> =
     when (
       val read =
-        readTab(sheetId, ExpenseSheetLayout.EXPENSES, ExpenseRowMapping.requiredHeaders) { row, columns ->
+        readTab(sheetId, ExpenseSheetLayout.EXPENSES, ExpenseRowMapping.requiredHeaders, { _, _ -> null }) { row, columns ->
           ParsedRow.Valid(ExpenseRowMapping.row(row, columns))
         }
     ) {
-      is TabReadResult.Rows -> read.copy(skipped = read.rows.count { it.value.expense == null })
+      is TabReadResult.Rows -> {
+        val invalid = read.rows.filter { it.value.expense == null }
+        read.copy(
+          skipped = invalid.size,
+          invalidKeys = invalid.mapNotNullTo(LinkedHashSet()) { it.value.id },
+          invalidRows = invalid.mapNotNull { row -> row.value.id?.let { SheetRow(row.row, it) } },
+        )
+      }
       else -> read
     }
 
+  /**
+   * Every keyed Categories row. [CategoryRowMapping.category] never finds a row invalid today (Color
+   * and Icon may be blank), so this read's invalid keys are always empty in the real gateway; sync's
+   * handling of invalid Categories rows is kept for a mapping that adds validation.
+   */
   suspend fun readCategories(sheetId: String): TabReadResult<Category> =
-    readTab(sheetId, ExpenseSheetLayout.CATEGORIES, CategoryRowMapping.requiredHeaders, CategoryRowMapping::category)
+    readTab(
+      sheetId,
+      ExpenseSheetLayout.CATEGORIES,
+      CategoryRowMapping.requiredHeaders,
+      { row, columns -> SheetValues.text(SheetValues.cell(row, columns, ExpenseSheetLayout.NAME)) },
+      CategoryRowMapping::category,
+    )
 
   suspend fun readBudgets(sheetId: String): TabReadResult<Budget> =
-    readTab(sheetId, ExpenseSheetLayout.BUDGETS, BudgetRowMapping.requiredHeaders, BudgetRowMapping::budget)
+    readTab(sheetId, ExpenseSheetLayout.BUDGETS, BudgetRowMapping.requiredHeaders, BudgetRowMapping::key, BudgetRowMapping::budget)
 
   suspend fun readDismissals(sheetId: String): TabReadResult<Dismissal> =
-    readTab(sheetId, ExpenseSheetLayout.DISMISSED, DismissalRowMapping.requiredHeaders, DismissalRowMapping::dismissal)
+    readTab(
+      sheetId,
+      ExpenseSheetLayout.DISMISSED,
+      DismissalRowMapping.requiredHeaders,
+      { row, columns -> SheetValues.text(SheetValues.cell(row, columns, ExpenseSheetLayout.SMS_ID)) },
+      DismissalRowMapping::dismissal,
+    )
 
   suspend fun readSettings(sheetId: String): TabReadResult<Setting> =
-    readTab(sheetId, ExpenseSheetLayout.SETTINGS, SettingRowMapping.requiredHeaders, SettingRowMapping::setting)
+    readTab(
+      sheetId,
+      ExpenseSheetLayout.SETTINGS,
+      SettingRowMapping.requiredHeaders,
+      { row, columns -> SheetValues.text(SheetValues.cell(row, columns, ExpenseSheetLayout.KEY)) },
+      SettingRowMapping::setting,
+    )
 
   /**
    * Updates the mapped cells of [existingRow], except Source, with one `values.batchUpdate`; or,
@@ -57,15 +91,41 @@ internal class SheetTabs(private val sheets: SheetsService) {
       }
     val cells = mapped(columns, ExpenseRowMapping.cells(expense, withSource = existingRow == null))
     if (existingRow == null) return appendRows(sheetId, tab, listOf(cells))
-    val data =
-      cells.map { (column, value) ->
-        ValueRange(range = "$tab!${SheetValues.columnLetter(column)}$existingRow", values = listOf(listOf(value)))
+    return updateRow(sheetId, tab, existingRow, cells)
+  }
+
+  /**
+   * Updates the Name, Color and Icon cells of [existingRow] with one `values.batchUpdate`; or, with
+   * no row, appends one row with only those cells.
+   */
+  suspend fun writeCategory(sheetId: String, category: Category, existingRow: Int?): RowWriteResult {
+    val tab = ExpenseSheetLayout.CATEGORIES
+    val columns =
+      when (val header = headerColumns(sheetId, tab, CategoryRowMapping.requiredHeaders)) {
+        is HeaderRead.Failed -> return header.result
+        is HeaderRead.Columns -> header.columns
       }
-    val request = BatchUpdateValuesRequest(valueInputOption = BatchUpdateValuesRequest.USER_ENTERED, data = data)
-    return when (val r = googleApiCall { sheets.batchUpdateValues(sheetId, request) }) {
-      is ApiResult.Failure -> r.reason.toWriteResult()
-      is ApiResult.Success -> RowWriteResult.Written(existingRow)
-    }
+    val cells = mapped(columns, CategoryRowMapping.cells(category))
+    if (existingRow == null) return appendRows(sheetId, tab, listOf(cells))
+    return updateRow(sheetId, tab, existingRow, cells)
+  }
+
+  /** Writes [category], as text, into the Category cell of each Expenses row in [rows], with one `values.batchUpdate`. */
+  suspend fun writeExpenseCategories(sheetId: String, rows: List<Int>, category: String): RowWriteResult {
+    if (rows.isEmpty()) return RowWriteResult.Written(null)
+    val tab = ExpenseSheetLayout.EXPENSES
+    val columns =
+      when (val header = headerColumns(sheetId, tab, ExpenseRowMapping.requiredHeaders)) {
+        is HeaderRead.Failed -> return header.result
+        is HeaderRead.Columns -> header.columns
+      }
+    val column = SheetValues.column(columns, ExpenseSheetLayout.CATEGORY) ?: return RowWriteResult.Failure(ExpenseSheetFailure.Unexpected)
+    val value = SheetValues.asText(category)
+    val data =
+      rows.distinct().sorted().map { row ->
+        ValueRange(range = "$tab!${SheetValues.columnLetter(column)}$row", values = listOf(listOf(value)))
+      }
+    return batchUpdate(sheetId, data, written = null)
   }
 
   /** Appends [categories] as rows of the Categories tab with one `values.append`, Name, Color and Icon only. */
@@ -99,24 +159,21 @@ internal class SheetTabs(private val sheets: SheetsService) {
         }
       }
     if (data.isEmpty()) return RowWriteResult.Written(null)
-    val request = BatchUpdateValuesRequest(valueInputOption = BatchUpdateValuesRequest.USER_ENTERED, data = data)
-    return when (val r = googleApiCall { sheets.batchUpdateValues(sheetId, request) }) {
-      is ApiResult.Failure -> r.reason.toWriteResult()
-      is ApiResult.Success -> RowWriteResult.Written(null)
-    }
+    return batchUpdate(sheetId, data, written = null)
   }
 
   /**
-   * Deletes the Expenses [rows] with one `spreadsheets.batchUpdate` of `deleteDimension` requests,
+   * Deletes the [rows] of [tab] with one `spreadsheets.batchUpdate` of `deleteDimension` requests,
    * highest row first, after looking up the tab's numeric ID with `spreadsheets.get`.
    */
-  suspend fun deleteExpenseRows(sheetId: String, rows: List<Int>): RowWriteResult {
+  suspend fun deleteRows(sheetId: String, tab: SheetTab, rows: List<Int>): RowWriteResult {
     if (rows.isEmpty()) return RowWriteResult.Written(null)
+    val title = tab.title()
     val tabId =
       when (val r = googleApiCall { sheets.getSpreadsheet(sheetId, TAB_IDS) }) {
         is ApiResult.Failure -> return r.reason.toWriteResult()
         is ApiResult.Success ->
-          r.value.sheets.orEmpty().firstOrNull { it.properties?.title.equals(ExpenseSheetLayout.EXPENSES, ignoreCase = true) }
+          r.value.sheets.orEmpty().firstOrNull { it.properties?.title.equals(title, ignoreCase = true) }
             ?.properties?.sheetId
       } ?: return RowWriteResult.Failure(ExpenseSheetFailure.Unexpected)
     val requests =
@@ -142,6 +199,34 @@ internal class SheetTabs(private val sheets: SheetsService) {
       }
     return appendRows(sheetId, tab, dismissals.map { mapped(columns, DismissalRowMapping.cells(it)) })
   }
+
+  /** Writes [cells] into [row] of [tab] with one `USER_ENTERED` `values.batchUpdate`. */
+  private suspend fun updateRow(sheetId: String, tab: String, row: Int, cells: List<Pair<Int, String>>): RowWriteResult =
+    batchUpdate(
+      sheetId,
+      cells.map { (column, value) ->
+        ValueRange(range = "$tab!${SheetValues.columnLetter(column)}$row", values = listOf(listOf(value)))
+      },
+      written = row,
+    )
+
+  /** One `USER_ENTERED` `values.batchUpdate` of [data]; [written] is the row a success reports. */
+  private suspend fun batchUpdate(sheetId: String, data: List<ValueRange>, written: Int?): RowWriteResult {
+    val request = BatchUpdateValuesRequest(valueInputOption = BatchUpdateValuesRequest.USER_ENTERED, data = data)
+    return when (val r = googleApiCall { sheets.batchUpdateValues(sheetId, request) }) {
+      is ApiResult.Failure -> r.reason.toWriteResult()
+      is ApiResult.Success -> RowWriteResult.Written(written)
+    }
+  }
+
+  private fun SheetTab.title(): String =
+    when (this) {
+      SheetTab.Expenses -> ExpenseSheetLayout.EXPENSES
+      SheetTab.Categories -> ExpenseSheetLayout.CATEGORIES
+      SheetTab.Budgets -> ExpenseSheetLayout.BUDGETS
+      SheetTab.Dismissed -> ExpenseSheetLayout.DISMISSED
+      SheetTab.Settings -> ExpenseSheetLayout.SETTINGS
+    }
 
   /** [cells] (header name to value) as (column, value) pairs, dropping headers the tab lacks. */
   private fun mapped(columns: Map<String, Int>, cells: Map<String, String>): List<Pair<Int, String>> =
@@ -192,12 +277,14 @@ internal class SheetTabs(private val sheets: SheetsService) {
    * Reads all of [tab]. Row 1 is the header and must have every name in [required]; sync repairs
    * the layout first, so a header still missing fails the read and no mirror is refreshed from a tab
    * it can't understand. Blank rows and rows with a blank key are left out; rows [parse] finds
-   * invalid are left out and counted as skipped. Expenses keeps both ([readExpenses]).
+   * invalid are left out, counted as skipped, and their [key] (when it reads) kept in the read's
+   * invalid keys and, with the row number, its invalid rows. Expenses keeps both ([readExpenses]).
    */
   private suspend fun <T> readTab(
     sheetId: String,
     tab: String,
     required: List<String>,
+    key: (List<Any?>, Map<String, Int>) -> String?,
     parse: (List<Any?>, Map<String, Int>) -> ParsedRow<T>,
   ): TabReadResult<T> {
     val values =
@@ -208,6 +295,8 @@ internal class SheetTabs(private val sheets: SheetsService) {
     val columns = SheetValues.columns(values.firstOrNull().orEmpty())
     if (!SheetValues.hasAll(columns, required)) return TabReadResult.Failure(ExpenseSheetFailure.Unexpected)
     var skipped = 0
+    val invalidKeys = LinkedHashSet<String>()
+    val invalidRows = mutableListOf<SheetRow<String>>()
     val rows =
       values.drop(1).mapIndexedNotNull { index, row ->
         if (SheetValues.isBlank(row)) return@mapIndexedNotNull null
@@ -216,12 +305,16 @@ internal class SheetTabs(private val sheets: SheetsService) {
           is ParsedRow.Valid -> SheetRow(row = index + 2, value = parsed.value)
           ParsedRow.Invalid -> {
             skipped++
+            key(row, columns)?.let {
+              invalidKeys += it
+              invalidRows += SheetRow(row = index + 2, value = it)
+            }
             null
           }
           ParsedRow.Unkeyed -> null
         }
       }
-    return TabReadResult.Rows(rows, skipped)
+    return TabReadResult.Rows(rows, skipped, invalidKeys, invalidRows)
   }
 
   private suspend fun get(sheetId: String, range: String): ApiResult<ValueRange> = googleApiCall {

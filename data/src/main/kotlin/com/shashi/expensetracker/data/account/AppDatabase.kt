@@ -20,7 +20,8 @@ import com.shashi.expensetracker.data.sync.OutboxEntity
 /**
  * The app's one Room database. Version 1 held only the session; version 2 adds the whole mirror
  * (one table per Sheet tab) and the outbox (AD-3), by an auto-migration that only adds tables, so
- * the session is kept. Every schema change ships a migration; there is no destructive fallback.
+ * the session is kept. Version 3 adds the outbox's nullable `payload` column, so pending entries
+ * are kept. Every schema change ships a migration; there is no destructive fallback.
  * Schemas are exported to `data/schemas/`.
  */
 @Database(
@@ -34,9 +35,9 @@ import com.shashi.expensetracker.data.sync.OutboxEntity
       SettingEntity::class,
       OutboxEntity::class,
     ],
-  version = 2,
+  version = 3,
   exportSchema = true,
-  autoMigrations = [AutoMigration(from = 1, to = 2)],
+  autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @TypeConverters(MirrorConverters::class)
 abstract class AppDatabase : RoomDatabase() {

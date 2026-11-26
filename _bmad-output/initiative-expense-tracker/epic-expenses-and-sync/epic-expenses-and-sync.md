@@ -52,3 +52,5 @@ Local storage, sync and the Expenses tab. Not Category or Budget management scre
 - Decision: entry 9's shared selection holds the Category as well as the period, so epic-budgets-and-home's Home Category rows set it to open Expenses filtered (user's decision, 2026-11-13).
 - Decision: entry 12 replaces Home's greeting tracer with the display name greeting (FR-23) (user's decision, 2026-11-13).
 - Source conflict: EXPERIENCE.md, Component Patterns, Expense row — "Rows with `synced = false` show 'Waiting to sync'" vs AD-3 "there is no `synced` column"; Pending Sync is an outbox entry for the row, and the build follows AD-3.
+- Decision: entry 5 is split; it keeps Category pushes, and new entry 16 (after 5) takes Budget, Dismissal and Setting pushes. Entries 6, 12 and 15 now wait on 16 (user's decision, 2026-11-20).
+- Decision: the outbox gets a nullable `payload` column (Room v3) to hold `DeleteCategory`'s `reassignTo`, rather than packing it into `base` (user's decision, 2026-11-20).
